@@ -31,7 +31,7 @@ class Unit(models.Model):
   ]
   unit_type = models.CharField(
     max_length=20,
-    choices=USER_TYPES,
+    choices=UNIT_TYPE,
     verbose_name="نوع الوحدة"
   )
   unit_number = models.CharField(
@@ -40,7 +40,7 @@ class Unit(models.Model):
     verbose_name="رقم الوحدة"
   )
   rent_price = models.DecimalField(
-    max_length=10,
+    max_digits=10,
     decimal_places=2,
     verbose_name="سعر الإيجار"
   )
