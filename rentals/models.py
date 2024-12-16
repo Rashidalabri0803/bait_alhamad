@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 #نموذج المستخدم
 class CustomUser(AbstractUser):
@@ -24,6 +24,9 @@ class CustomUser(AbstractUser):
   class Meta:
     verbose_name = _("مستخدم")
     verbose_name_plural = _("المستخدمون")
+
+  def __str__(self):
+    return self.username
 
 class Unit(models.Model):
   UNIT_TYPE = [
@@ -150,16 +153,47 @@ class LeaseContract(models.Model):
     null=True,
     verbose_name=_("ملاحظات العقد")
   )
+  created_at = models.DateTimeField(
+    auto_now_add=True,
+    verbose_name=_("تاريخ الإنشاء")
+  )
+  updated_at = models.DateTimeField(
+    auto_now=True,
+    verbose_name=_("تاريخ التحديث")
+  )
 
   class Meta:
     verbose_name=_("عقد إيجار")
     verbose_name_plural=_("عقود الإيجار")
+    constraints = [
+      models.CheckConstraint(
+        check=models.Q(end_date__gte=models.F('start_date')),
+        name='valid_contract_dates'
+      ),
+    ]
 
   def __str__(self):
     return f"عقد {self.unit} - {self.tenant}"
 
+  @property
+  def tax_amount(self):
+    TAX_RATE = 0.05
+    return self.unit.rent_price * TAX_RATE
+
+  @property
+  def total_electricity_dues(self):
+    return (self.electricity_current or 0) - (self.electricity_previous or 0)
+
+  @property
+  def total_water_dues(self):
+    return (self.water_current or 0) - (self.water_previous or 0)
+
 @receiver(post_save, sender=LeaseContract)
+@receiver(post_delete, sender=LeaseContract)
 def update_unit_status(sender, instance, created, **kwargs):
   unit = instance.unit
-  unit.status = 'accupied'
+  if LeaseContract.objects.filter(unit=unit).exists():
+    unit.status = 'accupied'
+  else:
+    unit.status = 'available'
   unit.save()
