@@ -1,5 +1,7 @@
 from django.contrib import admin
 from .models import CustomUser, Unit, Tenant, LeaseContract
+import csv
+from django.http import HttpResponse
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
@@ -46,6 +48,26 @@ def send_notifications(modeladmin, request, queryset):
             contract.notification_sent = True
             contract.save()
 
+@admin.action(description="تصدير العقود الى CSV")
+def export_contracts_to_csv(modeladmin, request, queryset):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="lease_contracts.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['الوحدة', 'المستاجر', 'تاريخ البداية', 'تاريخ النهاية', 'ملغى', 'تم إرسال التنبيه'])
+
+    for contract in queryset:
+        writer.writerow([
+            contract.unit.unit_number,
+            contract.tenant.user.username, 
+            contract.start_date, 
+            contract.end_date, 
+            contract.is_cancelled,
+            contract.notification_sent,
+        ])
+
+    return response
+    
 @admin.register(LeaseContract)
 class LeaseContractAdmin(admin.ModelAdmin):
     list_display = ('unit', 'tenant', 'start_date', 'end_date', 'is_cancelled', 'notification_sent', 'created_at')
