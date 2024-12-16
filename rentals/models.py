@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
+from django.contrib.auth import get_user_model
 #نموذج المستخدم
 class CustomUser(AbstractUser):
   USER_TYPES = [
@@ -67,10 +68,18 @@ class Unit(models.Model):
     default='available',
     verbose_name=_("الحالة")
   )
+  description = models.TextField(
+    blank=True,
+    verbose_name=_("وصف الوحدة")
+  )
 
   class Meta:
     verbose_name=_("وحدة")
     verbose_name_plural=_("الوحدات")
+    indexes = [
+      models.Index(fields=['unit_number'], name='unit_number_idx'),
+      models.Index(fields=['status'], name='status_idx'),
+    ]
 
   def __str__(self):
     return f"{self.get_unit_type_display()} - {self.unit_number}"
@@ -148,10 +157,18 @@ class LeaseContract(models.Model):
     null=True,
     verbose_name=("فاتورة المياه الحالي")
   )
+  is_cancelled = models.BooleanField(
+    default=False,
+    verbose_name=_("ملغى")
+  )
   agreement_note = models.TextField(
     blank=True,
     null=True,
     verbose_name=_("ملاحظات العقد")
+  )
+  notification_sent = models.BooleanField(
+    default=False,
+    verbose_name=_("تم ارسال التنبيه")
   )
   created_at = models.DateTimeField(
     auto_now_add=True,
