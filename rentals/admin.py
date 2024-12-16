@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import CustomeUser, Unit, Tenant, LeaseContract
+from .models import CustomUser, Unit, Tenant, LeaseContract
 
-@admin.register(CustomeUser)
-class CustomeUserAdmin(admin.ModelAdmin):
+@admin.register(CustomUser)
+class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active')
     list_filter = ('user_type', 'is_staff', 'is_active')
     search_fields = ('username', 'email', 'phone_number')
