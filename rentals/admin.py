@@ -8,6 +8,12 @@ class CustomUserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'email', 'phone_number')
     ordering = ('username',)
 
+class LeaseCotnractInline(admin.TabularInline):
+    model = LeaseContract
+    extra = 0
+    readonly_fields = ('tenant', 'start_date', 'end_date', 'is_cancelled', 'notification_sent')
+    can_delete = False
+
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     list_display = ('unit_number', 'unit_type', 'status',  'rent_price', 'electricity_account', 'water_account')
@@ -15,12 +21,30 @@ class UnitAdmin(admin.ModelAdmin):
     search_fields = ('unit_number', 'electricity_account', 'water_account')
     ordering = ('unit_number',)
     list_editable = ('status',)
+    inlines = [LeaseCotnractInline]
+
+class LeaseContractTenantInline(admin.TabularInline):
+    model = LeaseContract
+    extra = 0
+    readonly_fields = ('unit', 'start_date', 'end_date', 'is_cancelled')
 
 @admin.register(Tenant)
 class TenantAdmin(admin.ModelAdmin):
     list_display = ('user', 'tenant_type', 'company_name')
     list_filter = ('tenant_type',)
     search_fields = ('user__username', 'user__email', 'company_name')
+    inlines = [LeaseContractTenantInline]
+
+@admin.action(description="إلغاء العقود المحددة")
+def cancel_contracts(modeladmin, request, queryset):
+    queryset.update(is_cancelled=True)
+
+@admin.action(description="إرسال تنبيهات انتهاء العقد")
+def send_notifications(modeladmin, request, queryset):
+    for contract in queryset:
+        if not contract.notification_sent:
+            contract.notification_sent = True
+            contract.save()
 
 @admin.register(LeaseContract)
 class LeaseContractAdmin(admin.ModelAdmin):
@@ -45,3 +69,4 @@ class LeaseContractAdmin(admin.ModelAdmin):
             'fields': ('agreement_note', 'created_at', 'updated_at')
         }),
     )
+    action = [cancel_contracts, send_notifications]
