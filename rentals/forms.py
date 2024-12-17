@@ -1,11 +1,17 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm
+from django.core.exceptions import ValidationError
+from django.forms.widgets import TextInput, DateInput, Textarea, NumberInput, Select, CheckboxInput
+from django.db.models import Q
 from .models import CustomUser, Unit, Tenant, LeaseContract
 from datetime import date
 
-class CustomUserCreationForm(UserCreationForm):
-    password1 = forms.CharField(label="كلمة المرور", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    password2 = forms.CharField(label="تأكيد كلمة المرور", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+class CustomUserCreationForm(forms.ModelForm):
+    password1 = forms.CharField(
+      label="كلمة المرور", 
+      widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    password2 = forms.CharField(
+      label="تأكيد كلمة المرور", 
+      widget=forms.PasswordInput(attrs={'class': 'form-control'}))
   
     class Meta:
         model = CustomUser
@@ -17,10 +23,10 @@ class CustomUserCreationForm(UserCreationForm):
             'phone_number': 'رقم الهاتف',
         }
         widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'user_type': forms.Select(attrs={'class': 'form-control'}),
-            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'username': TextInput(attrs={'class': 'form-control'}),
+            'email': TextInput(attrs={'class': 'form-control'}),
+            'user_type': Select(attrs={'class': 'form-control'}),
+            'phone_number': TextInput(attrs={'class': 'form-control'}),
         }
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -36,7 +42,7 @@ class CustomUserCreationForm(UserCreationForm):
             user.save()
         return user
       
-class CustomUserChangeForm(UserChangeForm):
+class CustomUserChangeForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active']
@@ -61,10 +67,19 @@ class UnitForm(forms.ModelForm):
             'description': 'الوصف',
         }
         widgets = {
-            'unit_type': forms.Select(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control'}),
+            'unit_number': TextInput(attrs={'class': 'form-control'}),
+            'unit_type': Select(attrs={'class': 'form-control'}),
+            'rent_price': NumberInput(attrs={'class': 'form-control'}),
+            'electricity_account': TextInput(attrs={'class': 'form-control'}),
+            'water_account': TextInput(attrs={'class': 'form-control'}),
+            'status': Select(attrs={'class': 'form-control'}),
+            'description': Textarea(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk:
+            self.fields['status'].initial = 'available'
 
 class TenantForm(forms.ModelForm):
     class Meta:
@@ -124,8 +139,9 @@ class LeaseContractForm(forms.ModelForm):
         contract = super().save(commit=False)
         if commit:
             contract.save()
-            unit = contract.unit
-            unit.status = "occupied" if not contract.is_cancelled else "available"
-            unit.save()
+            if not contract.is_cancelled or self.cleaned_data.get("unit_status_override"):
+                contract.unit.status = "occupied"
+            else:
+                contract.unit.status = "available"
+            contract.unit.save()
         return contract
-      
