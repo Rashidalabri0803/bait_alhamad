@@ -1,8 +1,13 @@
 from django.contrib import admin
-from .models import CustomUser, Unit, Tenant, LeaseContract
-import csv
+from django.urls import path
+from django.template.response import TemplateResponse
+from django.db.models import Count
+from datetime import date
+from django.utils.html import format_html
 from django.http import HttpResponse
-
+import csv
+import openpyxl
+from .models import CustomUser, Unit, Tenant, LeaseContract
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active')
@@ -49,7 +54,7 @@ def send_notifications(modeladmin, request, queryset):
             contract.save()
 
 @admin.action(description="تصدير العقود الى CSV")
-def export_contracts_to_csv(modeladmin, request, queryset):
+def export_to_csv(modeladmin, request, queryset):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="lease_contracts.csv"'
 
@@ -62,11 +67,45 @@ def export_contracts_to_csv(modeladmin, request, queryset):
             contract.tenant.user.username, 
             contract.start_date, 
             contract.end_date, 
-            contract.is_cancelled,
-            contract.notification_sent,
+            "نعم" if contract.is_cancelled else "لا",
+            "نعم" if contract.notification_sent else "لا",
         ])
 
     return response
+
+@admin.action(description="تصدير العقود الى Excel")
+def export_to_excel(modeladmin, request, queryset):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "عقود الإيجار"
+    sheet.append(['الوحدة', 'المستاجر', 'تاريخ البداية', 'تاريخ النهاية', 'ملغى', 'تم إرسال التنبيه'])
+    for contract in queryset:
+        sheet.append([
+            contract.unit.unit_number,
+            contract.tenant.user.username, 
+            contract.start_date, 
+            contract.end_date, 
+            "نعم" if contract.is_cancelled else "لا",
+            "نعم" if contract.notification_sent else "لا",
+        ])
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="lease_contracts.xlsx"'
+    return response
+
+class ExpiredContractFilter(admin.SimpleListFilter):
+    title = 'حالة العقد'
+    parameter_name = 'contract_status'
+    def lookups(self, request, model_admin):
+        return (
+            ('active', 'نشط'),
+            ('expired', 'منتهي'),
+        )
+    def queryset(self, request, queryset):
+        if self.value() == 'active':
+            return queryset.filter(end_date__gte=date.today())
+        elif self.value() == 'expired':
+            return queryset.filter(end_date__lt=date.today())
+        return queryset
     
 @admin.register(LeaseContract)
 class LeaseContractAdmin(admin.ModelAdmin):
@@ -77,6 +116,18 @@ class LeaseContractAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_date'
     list_editable = ('is_cancelled', 'notification_sent')
     readonly_fields = ('created_at', 'updated_at')
+    def status_colored(self, obj):
+        if obj.is_cancelled:
+            color = "red"
+            status = "ملغي"
+        elif obj.end_date < date.today():
+            color = "orange"
+            status = "منتهي"
+        else:
+            color = "green"
+            status = "نشط"
+        return format_html('<span style="color: {}">{}</span>', color, status)
+    status_colored.short_description = 'حالة العقد'
     fieldsets = (
         ('معلومات الوحدة', {
             'fields': ('unit', 'tenant')
