@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path
 from django.template.response import TemplateResponse
-from django.db.models import Count
+from django.db.models import Count, Q
 from datetime import date
 from django.utils.html import format_html
 from django.http import HttpResponse
@@ -44,15 +44,19 @@ class TenantAdmin(admin.ModelAdmin):
 
 @admin.action(description="إلغاء العقود المحددة")
 def cancel_contracts(modeladmin, request, queryset):
-    queryset.update(is_cancelled=True)
+    updated_count = queryset.update(is_cancelled=True)
+    modeladmin.message_user(request, f"تم إلغاء {updated_count} عقد بنجاح")
 
 @admin.action(description="إرسال تنبيهات انتهاء العقد")
 def send_notifications(modeladmin, request, queryset):
+    updated_count = 0
     for contract in queryset:
         if not contract.notification_sent:
             contract.notification_sent = True
             contract.save()
-
+            updated_count += 1
+    modeladmin.message_user(request, f"تم إرسال التنبيهات ل{updated_count} عقد بنجاح")
+            
 @admin.action(description="تصدير العقود الى CSV")
 def export_to_csv(modeladmin, request, queryset):
     response = HttpResponse(content_type='text/csv')
@@ -101,10 +105,11 @@ class ExpiredContractFilter(admin.SimpleListFilter):
             ('expired', 'منتهي'),
         )
     def queryset(self, request, queryset):
+        today = date.today()
         if self.value() == 'active':
-            return queryset.filter(end_date__gte=date.today())
+            return queryset.filter(end_date__gte=today, is_cancelled=False)
         elif self.value() == 'expired':
-            return queryset.filter(end_date__lt=date.today())
+            return queryset.filter(Q(end_date__lt=today) | Q(is_cancelled=True))
         return queryset
     
 @admin.register(LeaseContract)
@@ -127,7 +132,10 @@ class LeaseContractAdmin(admin.ModelAdmin):
             color = "green"
             status = "نشط"
         return format_html('<span style="color: {}">{}</span>', color, status)
-    status_colored.short_description = 'حالة العقد'
+    status_colored.short_description ="حالة العقد"
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('unit', 'tenant__user').prefetch_related('tenant')
     fieldsets = (
         ('معلومات الوحدة', {
             'fields': ('unit', 'tenant')
