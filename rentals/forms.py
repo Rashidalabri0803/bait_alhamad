@@ -2,6 +2,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.forms.widgets import TextInput, DateInput, Textarea, NumberInput, Select, CheckboxInput
 from django.db.models import Q
+from dal import autocomplete
 from .models import CustomUser, Unit, Tenant, LeaseContract
 from datetime import date
 
@@ -76,10 +77,11 @@ class UnitForm(forms.ModelForm):
             'description': Textarea(attrs={'class': 'form-control'}),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if not self.instance.pk:
-            self.fields['status'].initial = 'available'
+    def clean_unit_number(self):
+        unit_number = self.cleaned_data.get("unit_number")
+        if Unit.objects.filter(unit_number=unit_number).exists():
+            raise forms.ValidationError("رقم الوحدة موجود بالفعل")
+        return unit_number
 
 class TenantForm(forms.ModelForm):
     class Meta:
@@ -103,6 +105,11 @@ class TenantForm(forms.ModelForm):
         return company_name
 
 class LeaseContractForm(forms.ModelForm):
+    admin_notes = forms.CharField(
+        label="ملاحظات الإدارة",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows':2, 'placehoder': 'إضافة ملاحظات الإدارة' }),
+        required=False
+    )
     class Meta:
         model = LeaseContract
         fields = ['unit', 'tenant', 'start_date', 'end_date', 'electricity_previous', 'electricity_current', 'water_previous', 'water_current', 'agreement_note', 'is_cancelled']
@@ -130,11 +137,17 @@ class LeaseContractForm(forms.ModelForm):
         }
     def clean(self):
         cleaned_data = super().clean()
+        unit = cleaned_data.get('unit')
         start_date = cleaned_data.get("start_date")
         end_date = cleaned_data.get("end_date")
-        if start_date and end_date and end_date <= start_date:
+        if end_date <= start_date:
             raise forms.ValidationError("تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
+
+        if LeaseContract.objects.filter(
+            Q(unit=unit) & Q(is_cancelled=False) & Q(end_date__gte=start_date).exists():
+            raise forms.ValidationError("هذه الوحدة تحتوي بالفعل على عقد نشط يغطي هذه الفترة")
         return cleaned_data
+        
     def save(self, commit=True):
         contract = super().save(commit=False)
         if commit:
