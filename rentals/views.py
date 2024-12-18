@@ -1,9 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.contrib import messages
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.http import JsonResponse
+from django.utils.timezone import now
+from django.db.models import Q, Count
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
 from .models import CustomUser, Unit, Tenant, LeaseContract
-from .forms import CustomUserForm, UnitForm, TenantForm, LeaseContractForm
+from .forms import CustomUserCreationForm, UnitForm, TenantForm, LeaseContractForm
 
 class UserListView(ListView):
     model = CustomUser
@@ -13,7 +16,7 @@ class UserListView(ListView):
   
 class UserCreateView(CreateView):
     model = CustomUser
-    form_class = CustomUserForm
+    form_class = CustomUserCreationForm
     template_name = 'users/user_form.html'
     success_url = reverse_lazy('user-list')
   
@@ -23,7 +26,7 @@ class UserCreateView(CreateView):
 
 class UserUpadateView(UpdateView):
     model = CustomUser
-    form_class = CustomUserForm
+    form_class = CustomUserCreationForm
     template_name = 'users/user_form.html'
     success_url = reverse_lazy('user-list')
 
@@ -126,6 +129,20 @@ class LeaseContractListView(ListView):
     context_object_name = 'lease-contracts'
     paginate_by = 10
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        filter_parm = self.request.GET.get('filter', 'all')
+        if filter_parm == 'active':
+            queryset = queryset.filter(Q(end_date__gte=now()) & Q(is_cancelled=False))
+        elif filter_parm == 'expired':
+            queryset = queryset.filter(Q(end_date__lt=now()) & Q(is_cancelled=True))
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter'] = self.request.GET.get('filter', 'all')
+        return context
+
 class LeaseContractDetialView(DetailView):
     model = LeaseContract
     template_name = 'leases/lease_contract_detail.html'
@@ -159,3 +176,34 @@ class LeaseContractDeleteView(DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "تم حذف العقد الايجار بنجاح")
         return super().delete(request, *args, **kwargs)
+
+class OccupiedUnitsReportView(ListView):
+    model = Unit
+    template_name = 'reports/occupied_units.html'
+    context_object_name = 'units'
+
+    def get_queryset(self):
+        return Unit.objects.filter(status='occupied')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_units'] = Unit.objects.count()
+        context['occupied_units'] = Unit.objects.filter(status='occupied').count()
+        return context
+
+def check_unit_availability(request):
+    unit_id = request.GET.get('unit_id')
+    is_available = not LeaseContract.objects.filter(unit_id=unit_id, end_date__gte=now(), is_cancelled=False).exists()
+    return JsonResponse({'is_available': is_available})
+
+class DashboardView(TemplateView):
+    template_name = 'dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_units'] = Unit.objects.count()
+        context['occupied_units'] = Unit.objects.filter(status='occupied').count()
+        context['available_units'] = Unit.objects.filter(status='available').count()
+        context['total_contracts'] = LeaseContract.objects.count()
+        context['active_contracts'] = LeaseContract.objects.filter(end_date__gte=now(), is_cancelled=False).count()
+        return context
