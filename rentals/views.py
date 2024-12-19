@@ -1,13 +1,27 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
-from django.http import JsonResponse
 from django.utils.timezone import now
-from django.db.models import Q, Count
-from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView
+from django.db.models import Q, Count, Sum
+from django.views.generic import ListView, DetailView, CreateView, TemplateView, UpdateView, DeleteView, View
 from .models import CustomUser, Unit, Tenant, LeaseContract
 from .forms import CustomUserCreationForm, UnitForm, TenantForm, LeaseContractForm
 
+class DashboardView(TemplateView):
+    template_name = 'dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['total_units'] = Unit.objects.count()
+        context['occupied_units'] = Unit.objects.filter(status='occupied').count()
+        context['available_units'] = Unit.objects.filter(status='available').count()
+        context['total_contracts'] = LeaseContract.objects.count()
+        context['active_contracts'] = LeaseContract.objects.filter(end_date__gte=now(), is_cancelled=False).count()
+        context['expired_contracts'] = LeaseContract.objects.filter(Q(end_date__lt=now()) | Q(is_cancelled=False)).count()
+        context['total_income'] = LeaseContract.objects.filter(is_cancelled=False).aggregate(total_rent=Sum('unit_rent_price'))['total_rent'] or 0
+        return context
+        
 class UserListView(ListView):
     model = CustomUser
     template_name = 'users/user_list.html'
@@ -177,6 +191,18 @@ class LeaseContractDeleteView(DeleteView):
         messages.success(self.request, "تم حذف العقد الايجار بنجاح")
         return super().delete(request, *args, **kwargs)
 
+class ExportCSVView(View):
+    def get(self, request, *args, **kwargs):
+        queryset = LeaseContract.objects.all()
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="leases_contracts.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['الوحدة', 'المستأجر', 'تاريخ البداية', 'تاريخ النهاية', 'سعر الإيجار', 'ملغي'])
+        for contract in queryset:
+            writer.writerow([contract.unit.unit_number, contract.user.username, contract.start_date, contract.end_date, contract.unit.rent_price,  "لا" if contract.is_cancelled else "نعم"])
+            return response
+
 class OccupiedUnitsReportView(ListView):
     model = Unit
     template_name = 'reports/occupied_units.html'
@@ -195,15 +221,3 @@ def check_unit_availability(request):
     unit_id = request.GET.get('unit_id')
     is_available = not LeaseContract.objects.filter(unit_id=unit_id, end_date__gte=now(), is_cancelled=False).exists()
     return JsonResponse({'is_available': is_available})
-
-class DashboardView(TemplateView):
-    template_name = 'dashboard.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['total_units'] = Unit.objects.count()
-        context['occupied_units'] = Unit.objects.filter(status='occupied').count()
-        context['available_units'] = Unit.objects.filter(status='available').count()
-        context['total_contracts'] = LeaseContract.objects.count()
-        context['active_contracts'] = LeaseContract.objects.filter(end_date__gte=now(), is_cancelled=False).count()
-        return context
