@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الوحدات</title>
+  </head>
+  <body>
+    <h1>إدارة الوحدات</h1>
+    <a href="{% url 'unit-create' %}">إضافة وحدة جديدة</a>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>رقم الوحدة</th>
+          <th>نوع الوحدة</th>
+          <th>الحالة</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for unit in units %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ unit.unit_number }}</td>
+          <td>{{ unit.get_unit_type_display }}</td>
+          <td>{{ unit.get_status_display }}</td>
+          <td>
+            <a href="{% url 'unit-detail' unit.id %}">عرض</a>
+            <a href="{% url 'unit-update' unit.id %}">تعديل</a>
+            <a href="{% url 'unit-delete' unit.id %}">حذف</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

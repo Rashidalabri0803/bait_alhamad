@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل الوحدة</title>
+  </head>
+  <body>
+    <h1>تفاصيل الوحدة</h1>
+    <p>رقم الوحدة: {{ unit.unit_number }}</p>
+    <p>نوع الوحدة: {{ unit.unit_type }}</p>
+    <p>الحالة: {{ unit.get_status_display }}</p>
+    <p>سعر الإيجار: {{ unit.rental_price }}</p>
+    <p>الوصف: {{ unit.description }}</p>
+    <a href="{% url 'unit-list'  %}">العودة الى القائمة</a>
+  </body>
+</html>

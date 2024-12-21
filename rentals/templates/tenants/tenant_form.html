@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if object %}تعديل{% else %}إضافة{% endif %} مستأجر</title>
+  </head>
+  <body>
+    <h1>{% if object %}تعديل{% else %}إضافة{% endif %} مستأجر</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">{% if object %}تعديل{% else %}إضافة{% endif %} مستخدم</button>
+    </form>
+    <a href="{% url 'tenant-list' %}">عودة إلى القائمة</a>
+  </body>
+</html>

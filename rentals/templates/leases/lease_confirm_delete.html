@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حذف عقد إيجار</title>
+  </head>
+  <body>
+    <h1> حذف عقد إيجار للوحدة {{ object.unit_number }}</h1>
+    <p>هل أنت متأكد تريد حذف هذا العقد؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">نعم حذف</button>
+      <a href="{% url 'lease-list' %}">الغاء</a>
+    </form>
+  </body>
+</html>

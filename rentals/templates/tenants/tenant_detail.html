@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المستأجر</title>
+  </head>
+  <body>
+    <h1>تفايل المستأجر: {{ tenant.user.username }}</h1>
+    <p>نوع المستأجر: {{ tenant.get_tenant_type_display }}</p>
+    <p>رقم الهاتف: {{ tenant.phone_number }}</p>
+    <p>العنوان: {{ tenant.address }}</p>
+    <a href="{% url 'tenant-list'  %}">العودة الى القائمة</a>
+  </body>
+</html>

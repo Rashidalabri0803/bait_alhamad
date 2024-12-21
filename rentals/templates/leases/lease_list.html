@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة عقود الإيجار</title>
+  </head>
+  <body>
+    <h1>إدارة عقود الإيجار</h1>
+    <a href="{% url 'lease-create' %}">إضافة عقد جديد</a>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>الوحدة</th>
+          <th>المستأجر</th>
+          <th>تاريخ البدء</th>
+          <th>تاريخ النهاية</th>
+          <th>الحالة</th>
+          <th>الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lease in leases %}
+        <tr>
+          <td>{{ forloop.counter }}</td>
+          <td>{{ lease.unit.unit_number }}</td>
+          <td>{{ lease.tenant.user.username }}</td>
+          <td>{{ lease.start_date }}</td>
+          <td>{{ lease.end_date }}</td>
+          <td>{% if lease.is_cancelled %}ملغي{% else %}نشط{% endif}</td>
+          <td>
+            <a href="{% url 'lease-detail' lease.id %}">عرض</a>
+            <a href="{% url 'lease-update' lease.id %}">تعديل</a>
+            <a href="{% url 'lease-delete' lease.id %}">حذف</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
