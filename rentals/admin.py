@@ -1,13 +1,9 @@
 from django.contrib import admin
-from django.urls import path
-from django.template.response import TemplateResponse
-from django.db.models import Count, Q
-from datetime import date
 from django.utils.html import format_html
+from django.urls import reverse, path
 from django.http import HttpResponse
-import csv
-import openpyxl
-from .models import CustomUser, Unit, Tenant, LeaseContract
+from .models import CustomUser, Unit, UnitImage, Tenant, RentalContract, Invoice, Payment, ContractAttachment
+
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active')
@@ -15,139 +11,98 @@ class CustomUserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'email', 'phone_number')
     ordering = ('username',)
 
-class LeaseCotnractInline(admin.TabularInline):
-    model = LeaseContract
-    extra = 0
-    readonly_fields = ('tenant', 'start_date', 'end_date', 'is_cancelled', 'notification_sent')
-    can_delete = False
+class UnitImageInline(admin.TabularInline):
+    model = UnitImage
+    extra = 1
+    fields = ('image_preview', 'image',)
+    readonly_fields = ('image_preview',)
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width: 100px; height: auto;"/>', obj.image.url)
+        return "لا توجد صورة"
+    image_preview.short_description = "معاينة الصورة"
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
-    list_display = ('unit_number', 'unit_type', 'status',  'rent_price', 'electricity_account', 'water_account')
+    list_display = ('unit_number', 'unit_type', 'status', 'rent_price', 'electricity_account', 'water_account')
     list_filter = ('unit_type', 'status')
-    search_fields = ('unit_number', 'electricity_account', 'water_account')
+    search_fields = ('unit_number', 'description', 'electricity_account', 'water_account')
+    inlines = [UnitImageInline]
     ordering = ('unit_number',)
-    list_editable = ('status',)
-    inlines = [LeaseCotnractInline]
-
-class LeaseContractTenantInline(admin.TabularInline):
-    model = LeaseContract
-    extra = 0
-    readonly_fields = ('unit', 'start_date', 'end_date', 'is_cancelled')
 
 @admin.register(Tenant)
 class TenantAdmin(admin.ModelAdmin):
-    list_display = ('user', 'tenant_type', 'company_name')
+    list_display = ('user', 'tenant_type', 'company_name', 'commercial_record_number')
     list_filter = ('tenant_type',)
-    search_fields = ('user__username', 'user__email', 'company_name')
-    inlines = [LeaseContractTenantInline]
+    search_fields = ('user__username', 'company_name', 'commercial_record_number')
 
-@admin.action(description="إلغاء العقود المحددة")
-def cancel_contracts(modeladmin, request, queryset):
-    updated_count = queryset.update(is_cancelled=True)
-    modeladmin.message_user(request, f"تم إلغاء {updated_count} عقد بنجاح")
+class InvoiceInline(admin.TabularInline):
+    model = Invoice
+    extra = 1
+    fields = ('invoice_date', 'due_date', 'amount', 'status')
 
-@admin.action(description="إرسال تنبيهات انتهاء العقد")
-def send_notifications(modeladmin, request, queryset):
-    updated_count = 0
-    for contract in queryset:
-        if not contract.notification_sent:
-            contract.notification_sent = True
-            contract.save()
-            updated_count += 1
-    modeladmin.message_user(request, f"تم إرسال التنبيهات ل{updated_count} عقد بنجاح")
-            
-@admin.action(description="تصدير العقود الى CSV")
-def export_to_csv(modeladmin, request, queryset):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="lease_contracts.csv"'
+class ContractAttachmentInline(admin.TabularInline):
+    model = ContractAttachment
+    extra = 1
+    fields = ('file',)
 
-    writer = csv.writer(response)
-    writer.writerow(['الوحدة', 'المستاجر', 'تاريخ البداية', 'تاريخ النهاية', 'ملغى', 'تم إرسال التنبيه'])
-
-    for contract in queryset:
-        writer.writerow([
-            contract.unit.unit_number,
-            contract.tenant.user.username, 
-            contract.start_date, 
-            contract.end_date, 
-            "نعم" if contract.is_cancelled else "لا",
-            "نعم" if contract.notification_sent else "لا",
-        ])
-
-    return response
-
-@admin.action(description="تصدير العقود الى Excel")
-def export_to_excel(modeladmin, request, queryset):
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "عقود الإيجار"
-    sheet.append(['الوحدة', 'المستاجر', 'تاريخ البداية', 'تاريخ النهاية', 'ملغى', 'تم إرسال التنبيه'])
-    for contract in queryset:
-        sheet.append([
-            contract.unit.unit_number,
-            contract.tenant.user.username, 
-            contract.start_date, 
-            contract.end_date, 
-            "نعم" if contract.is_cancelled else "لا",
-            "نعم" if contract.notification_sent else "لا",
-        ])
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename="lease_contracts.xlsx"'
-    return response
-
-class ExpiredContractFilter(admin.SimpleListFilter):
-    title = 'حالة العقد'
-    parameter_name = 'contract_status'
-    def lookups(self, request, model_admin):
-        return (
-            ('active', 'نشط'),
-            ('expired', 'منتهي'),
-        )
-    def queryset(self, request, queryset):
-        today = date.today()
-        if self.value() == 'active':
-            return queryset.filter(end_date__gte=today, is_cancelled=False)
-        elif self.value() == 'expired':
-            return queryset.filter(Q(end_date__lt=today) | Q(is_cancelled=True))
-        return queryset
-    
-@admin.register(LeaseContract)
-class LeaseContractAdmin(admin.ModelAdmin):
-    list_display = ('unit', 'tenant', 'start_date', 'end_date', 'is_cancelled', 'notification_sent', 'created_at')
-    list_filter = ('is_cancelled', 'notification_sent', 'start_date', 'end_date')
-    search_fields = ('unit__unit_number', 'tenant__user__username', 'tenant__company_name')
+@admin.register(RentalContract)
+class RentalContractAdmin(admin.ModelAdmin):
+    list_display = ('unit', 'tenant', 'start_date', 'end_date', 'days_left', 'is_cancelled')
+    list_filter = ('is_cancelled', 'unit__status')
+    search_fields = ('unit__unit_number', 'tenant__user__username')
+    inlines = [InvoiceInline, ContractAttachmentInline]
     ordering = ('start_date',)
-    date_hierarchy = 'start_date'
-    list_editable = ('is_cancelled', 'notification_sent')
-    readonly_fields = ('created_at', 'updated_at')
-    def status_colored(self, obj):
-        if obj.is_cancelled:
-            color = "red"
-            status = "ملغي"
-        elif obj.end_date < date.today():
-            color = "orange"
-            status = "منتهي"
-        else:
-            color = "green"
-            status = "نشط"
-        return format_html('<span style="color: {}">{}</span>', color, status)
-    status_colored.short_description ="حالة العقد"
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.select_related('unit', 'tenant__user').prefetch_related('tenant')
-    fieldsets = (
-        ('معلومات الوحدة', {
-            'fields': ('unit', 'tenant')
-        }),
-        ('تفاصيل العقد', {
-            'fields': ('start_date', 'end_date', 'is_cancelled', 'notification_sent')
-        }),
-        ('الفواتير', {
-            'fields': ('electricity_previous', 'electricity_current', 'water_previous', 'water_current')
-        }),
-        ('ملاحظات وأوقات', {
-            'fields': ('agreement_note', 'created_at', 'updated_at')
-        }),
-    )
-    action = [cancel_contracts, send_notifications]
+    actions = ['cancel_contracts']
+    def unit_link(self, obj):
+        return format_html('<a href="{}">{}</a>', reverse('admin:app_unit_change', args=[obj.unit.id]), obj.unit.unit_number)
+    unit_link.short_description = "الوحدة"
+    def tenant_link(self, obj):
+        return format_html('<a href="{}">{}</a>', reverse('admin:app_tenant_change', args=[obj.tenant.id]), obj.tenant.user.username)
+    tenant_link.short_description = "المستأجر"
+@admin.action(description="إلغاء العقود المحددة")
+def cancel_contracts(self, request, queryset):
+    updated = queryset.update(is_cancelled=True)
+    self.messaage_user(request, f"تم إلغاء {updated} عقد ")
+change_list_template = "admin/rental_contract_changelist.html"
+def get_url(self):
+    urls = super().get_urls()
+    custom_urls = [
+        path('active-contracts-report/', self.export_active_contracts, name='active_contracts_report'),
+    ]
+    return custom_urls + urls
+def export_active_contracts(self, request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="active_contracts.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['Contract Id', 'Unit', 'Tenant', 'Start Date', 'End Date'])
+    contracts = RentalContract.objects.filter(is_cancelled=False)
+    for contract in contracts:
+        writer.writerow([contract.id, contract.unit.unit_number, contract.tenant.user.username, contract.start_date, contract.end_date])
+    return response
+    
+class PaymentInline(admin.TabularInline):
+    model = Payment
+    extra = 1
+    fields = ('payment_date', 'amount_paid', 'transaction_id', 'payment_method')
+
+@admin.register(Invoice)
+class InvoiceAdmin(admin.ModelAdmin):
+    list_display = ('contract', 'invoice_date', 'due_date', 'amount', 'remainig_balance', 'status')
+    list_filter = ('status',)
+    search_fields = ('contract__unit__unit_number', 'contract__tenant__user__username')
+    inlines = [PaymentInline]
+    ordering = ('due_date',)
+
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('invoice', 'payment_date', 'amount_paid', 'transaction_id', 'payment_method')
+    list_filter = ('payment_method',)
+    search_fields = ('invoice__contract__unit__unit_number', 'transaction_id')
+    ordering = ('payment_date',)
+
+@admin.register(ContractAttachment)
+class ContractAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('contract', 'file', 'uploaded_at')
+    search_fields = ('contract__unit__unit_number',)
+    ordering = ('uploaded_at',)
