@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse, path
 from django.http import HttpResponse
+import csv
+from django.db.models import Sum
 from .models import CustomUser, Unit, UnitImage, Tenant, RentalContract, Invoice, Payment, ContractAttachment
 
 @admin.register(CustomUser)
@@ -16,6 +18,7 @@ class UnitImageInline(admin.TabularInline):
     extra = 1
     fields = ('image_preview', 'image',)
     readonly_fields = ('image_preview',)
+    
     def image_preview(self, obj):
         if obj.image:
             return format_html('<img src="{}" style="width: 100px; height: auto;"/>', obj.image.url)
@@ -54,32 +57,42 @@ class RentalContractAdmin(admin.ModelAdmin):
     inlines = [InvoiceInline, ContractAttachmentInline]
     ordering = ('start_date',)
     actions = ['cancel_contracts']
+    
     def unit_link(self, obj):
         return format_html('<a href="{}">{}</a>', reverse('admin:app_unit_change', args=[obj.unit.id]), obj.unit.unit_number)
     unit_link.short_description = "الوحدة"
+    
     def tenant_link(self, obj):
         return format_html('<a href="{}">{}</a>', reverse('admin:app_tenant_change', args=[obj.tenant.id]), obj.tenant.user.username)
     tenant_link.short_description = "المستأجر"
-@admin.action(description="إلغاء العقود المحددة")
-def cancel_contracts(self, request, queryset):
-    updated = queryset.update(is_cancelled=True)
-    self.messaage_user(request, f"تم إلغاء {updated} عقد ")
-change_list_template = "admin/rental_contract_changelist.html"
-def get_url(self):
-    urls = super().get_urls()
-    custom_urls = [
-        path('active-contracts-report/', self.export_active_contracts, name='active_contracts_report'),
+    
+    @admin.action(description="إلغاء العقود المحددة")
+    def cancel_contracts(self, request, queryset):
+        updated = queryset.update(is_cancelled=True)
+        self.messaage_user(request, f"تم إلغاء {updated} عقد ")
+        
+    @admin.action(description="إعادة تنشيط العقود الملغاة")
+    def reactivate_contracts(self, request, queryset):
+        updated = queryset.update(is_cancelled=False)
+        self.messaage_user(request, f"تم إعادة تنشيط {updated} عقد ")
+    change_list_template = "admin/rental_contract_changelist.html"
+    
+    def get_url(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('active-contracts-report/', self.export_active_contracts, name='active_contracts_report'),
     ]
-    return custom_urls + urls
-def export_active_contracts(self, request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="active_contracts.csv"'
-    writer = csv.writer(response)
-    writer.writerow(['Contract Id', 'Unit', 'Tenant', 'Start Date', 'End Date'])
-    contracts = RentalContract.objects.filter(is_cancelled=False)
-    for contract in contracts:
-        writer.writerow([contract.id, contract.unit.unit_number, contract.tenant.user.username, contract.start_date, contract.end_date])
-    return response
+        return custom_urls + urls
+        
+    def export_active_contracts(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="active_contracts.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Contract Id', 'Unit', 'Tenant', 'Start Date', 'End Date'])
+        contracts = RentalContract.objects.filter(is_cancelled=False)
+        for contract in contracts:
+            writer.writerow([contract.id, contract.unit.unit_number, contract.tenant.user.username, contract.start_date, contract.end_date])
+        return response
     
 class PaymentInline(admin.TabularInline):
     model = Payment
@@ -93,6 +106,33 @@ class InvoiceAdmin(admin.ModelAdmin):
     search_fields = ('contract__unit__unit_number', 'contract__tenant__user__username')
     inlines = [PaymentInline]
     ordering = ('due_date',)
+    actions = ['mark_as_paid']
+
+    def total_payments(self, obj):
+        return obj.payments.aggregate(total=Sum('amount_paid'))['total'] or 0
+    total_payments.short_description = "إجمالي المدفوعات"
+
+    @admin.action(description="تحديد الفواتير المدفوعة")
+    def mark_as_paid(self, request, queryset)::
+        updated = queryset.update(status='Paid')
+        self.messaage_user(request, f"تم تحديث {updated} فاتورة الى مدفوعة")
+        
+    def get_url(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('overdue-report/', self.export_active_invoices, name='overdue_invoices_report'),
+    ]
+        return custom_urls + urls
+        
+    def export_active_invoices(self, request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="active_invoices.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Invoice Id', 'Contract', 'Unit', 'Tenant', 'Amount', 'Due Date', 'Status'])
+        overdue_invoices = Invoice.objects.filter(status='overdue')
+        for invoice in overdue_invoices:
+            writer.writerow([invoice.id, invoice.contract.unit.unit_number, invoice.contract.tenant.user.username, invoice.amount, invoice.due_date, invoice.get_status_display()])
+        return response
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
