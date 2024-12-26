@@ -43,6 +43,11 @@ class UnitForm(forms.ModelForm):
             'unit_number': forms.TextInput(attrs={'placeholder': _('أدخل رقم الوحدة')}),
             'description': forms.Textarea(attrs={'placeholder': _('أدخل الوصف')}),
         }
+    def clean_rent_price(self):
+        rent_price = self.cleaned_data.get('rent_price')
+        if rent_price and rent_price < 50:
+            raise forms.ValidationError(_("سعر الإيجار يجب أن يكون أكبر من 50"))
+        return rent_price
 
 class RentalContractForm(forms.ModelForm):
     municipality_fees = forms.DecimalField(label=_('رسوم البلدية'), required=False, disabled=True)
