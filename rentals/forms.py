@@ -1,160 +1,183 @@
 from django import forms
-from django.core.exceptions import ValidationError
-from django.forms.widgets import TextInput, DateInput, Textarea, NumberInput, Select, CheckboxInput
-from django.db.models import Q
-from dal import autocomplete
-from .models import CustomUser, Unit, Tenant, LeaseContract
-from datetime import date
+from django.utils.translation import ugettext_lazy as _
+from .models import CustomUser, Tenant, Unit, RentalContract, Invoice, Payment
 
-class CustomUserCreationForm(forms.ModelForm):
-    password1 = forms.CharField(
-      label="كلمة المرور", 
-      widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-    password2 = forms.CharField(
-      label="تأكيد كلمة المرور", 
-      widget=forms.PasswordInput(attrs={'class': 'form-control'}))
-  
+class CustomUserForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active']
+        fields = ['username', 'email', 'user_type', 'phone_number', 'is_active']
         labels = {
-            'username': 'اسم المستخدم',
-            'email': 'البريد الإلكتروني',
-            'user_type': 'نوع المستخدم',
-            'phone_number': 'رقم الهاتف',
+            'username': _('اسم المستخدم'),
+            'email': _('البريد الإلكتروني'),
+            'user_type': _('نوع المستخدم'),
+            'phone_number': _('رقم الهاتف'),
+            'is_active': _('نشط'),
         }
         widgets = {
-            'username': TextInput(attrs={'class': 'form-control'}),
-            'email': TextInput(attrs={'class': 'form-control'}),
-            'user_type': Select(attrs={'class': 'form-control'}),
-            'phone_number': TextInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'placeholder': _('أدخل اسم المستخدم')}),
+            'email': forms.EmailInput(attrs={'placeholder': _('أدخل البريد الإلكتروني')}),
+            'user_type': forms.Select(attrs={'placeholder': _('أدخل نوع المستخدم')}),
+            'phone_number': forms.TextInput(attrs={'placeholder': _('أدخل رقم الهاتف مع رمز الدولة')}),
         }
-    def clean_password2(self):
-        password1 = self.cleaned_data.get("password1")
-        password2 = self.cleaned_data.get("password2")
-        if password1 and password2 and password1 != password2:
-            raise forms.ValidationError("كلمة المرور وتأكيد كلمة المرور غير متطابقين")
-        return password2
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.set_password(self.cleaned_data["password1"])
-        if commit:
-            user.save()
-        return user
-      
-class CustomUserChangeForm(forms.ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ['username', 'email', 'user_type', 'phone_number', 'is_staff', 'is_active']
-        labels = {
-            'username': 'اسم المستخدم',
-            'email': 'البريد الإلكتروني',
-            'user_type': 'نوع المستخدم',
-            'phone_number': 'رقم الهاتف',
-        }
+    def clean_phone_number(self):
+        phone_number = self.cleaned_data['phone_number']
+        if phone_number and not phone_number.startswith('+'):
+            raise forms.ValidationError(_("رقم الهاتف يجب بدء بـ +"))
+        return phone_number
 
 class UnitForm(forms.ModelForm):
     class Meta:
         model = Unit
-        fields = ['unit_number', 'unit_type', 'rent_price', 'electricity_account', 'water_account', 'status', 'description']
+        fields = ['unit_number', 'unit_type', 'status', 'rent_price', 'electricity_account', 'water_account', 'description']
         labels = {
-            'unit_number': 'رقم الوحدة',
-            'unit_type': 'نوع الوحدة',
-            'rent_price': 'سعر الإيجار',
-            'electricity_account': 'رقم حساب الكهرباء',
-            'water_account': 'رقم حساب المياه',
-            'status': 'الحالة',
-            'description': 'الوصف',
+            'unit_number': _('رقم الوحدة'),
+            'unit_type': _('نوع الوحدة'),
+            'status': _('الحالة'),
+            'rent_price': _('سعر الإيجار'),
+            'electricity_account': _('حساب الكهرباء'),
+            'water_account': _('حساب المياه'),
+            'description': _('الوصف'),
         }
         widgets = {
-            'unit_number': TextInput(attrs={'class': 'form-control'}),
-            'unit_type': Select(attrs={'class': 'form-control'}),
-            'rent_price': NumberInput(attrs={'class': 'form-control'}),
-            'electricity_account': TextInput(attrs={'class': 'form-control'}),
-            'water_account': TextInput(attrs={'class': 'form-control'}),
-            'status': Select(attrs={'class': 'form-control'}),
-            'description': Textarea(attrs={'class': 'form-control'}),
+            'unit_number': forms.TextInput(attrs={'placeholder': _('أدخل رقم الوحدة')}),
+            'description': forms.Textarea(attrs={'placeholder': _('أدخل الوصف')}),
         }
 
-    def clean_unit_number(self):
-        unit_number = self.cleaned_data.get("unit_number")
-        if Unit.objects.filter(unit_number=unit_number).exists():
-            raise forms.ValidationError("رقم الوحدة موجود بالفعل")
-        return unit_number
-
-class TenantForm(forms.ModelForm):
+class RentalContractForm(forms.ModelForm):
+    municipality_fees = forms.DecimalField(label=_('رسوم البلدية'), required=False, disabled=True)
     class Meta:
-        model = Tenant
-        fields = ['user', 'tenant_type', 'company_name']
+        model = RentalContract
+        fields = ['unit', 'tenant', 'start_date', 'end_date', 'monthly_rent', 'municipality_fees',  'is_cancelled']
         labels = {
-            'user': 'المستخدم',
-            'tenant_type': 'نوع المستأجر',
-            'company_name': 'اسم الشركة (إن وجد)',
+            'unit': _('الوحدة'),
+            'tenant': _('المستأجر'),
+            'start_date': _('تاريخ البدء'),
+            'end_date': _('تاريخ النهاية'),
+            'monthly_rent': _('الإيجار الشهري'),
+            'municipality_fees': _('رسوم البلدية'),
+            'is_cancelled': _('ملغي'),
         }
         widgets = {
-            'tenant_type': forms.Select(attrs={'class': 'form-control'}),
-            'company_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'start_date': forms.DateInput(attrs={'type':'date'}),
+            'end_date': forms.DateInput(attrs={'typr':'date'}),
         }
-
-    def clean_company_name(self):
-        tenant_type = self.cleaned_data.get("tenant_type")
-        company_name = self.cleaned_data.get("company_name")
-        if tenant_type == "company" and not company_name:
-            raise forms.ValidationError("يجب إدخال اسم الشركة عند اختيار نوع المستأجر كشركة")
-        return company_name
-
-class LeaseContractForm(forms.ModelForm):
-    admin_notes = forms.CharField(
-        label="ملاحظات الإدارة",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows':2, 'placehoder': 'إضافة ملاحظات الإدارة' }),
-        required=False
-    )
-    class Meta:
-        model = LeaseContract
-        fields = ['unit', 'tenant', 'start_date', 'end_date', 'electricity_previous', 'electricity_current', 'water_previous', 'water_current', 'agreement_note', 'is_cancelled']
-        labels = {
-            'unit': 'الوحدة',
-            'tenant': 'المستأجر',
-            'start_date': 'تاريخ البداية',
-            'end_date': 'تاريخ النهاية',
-            'electricity_previous': 'فاتورة الكهرباء السابقة',
-            'electricity_current': 'فاتورة الكهرباء الحالية',
-            'water_previous': 'فاتورة المياه السابقة',
-            'water_current': 'فاتورة المياه الحالية',
-            'agreement_note': 'ملاحظات العقد',
-            'is_cancelled': 'ملغي؟',
-        }
-        widgets = {
-            'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'electricity_previous': forms.NumberInput(attrs={'class': 'form-control'}),
-            'electricity_current': forms.NumberInput(attrs={'class': 'form-control'}),
-            'water_previous': forms.NumberInput(attrs={'class': 'form-control'}),
-            'water_current': forms.NumberInput(attrs={'class': 'form-control'}),
-            'agreement_note': forms.Textarea(attrs={'class': 'form-control'}),
-            'is_cancelled': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-        }
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        self.fields['unit'].queryset = Unit.objects.filter(status='available')
+        if self.instance.pk:
+            self.fields['municipality_fees'].initial = self.instance.monthly_rent * 12 * 0.03
+        if user and not user.is_superuser:
+            self.fields.pop('is_cancelled')
+            
     def clean(self):
         cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        if start_date and end_date and start_date >= end_date:
+            raise forms.ValidationError(_("تاريخ النهاية يجب أن يكون أكبر من تاريخ البداية"))
         unit = cleaned_data.get('unit')
-        start_date = cleaned_data.get("start_date")
-        end_date = cleaned_data.get("end_date")
-        if end_date <= start_date:
-            raise forms.ValidationError("تاريخ النهاية يجب أن يكون بعد تاريخ البداية")
-
-        if LeaseContract.objects.filter(
-            Q(unit=unit) & Q(is_cancelled=False) & Q(end_date__gte=start_date).exists():
-            raise forms.ValidationError("هذه الوحدة تحتوي بالفعل على عقد نشط يغطي هذه الفترة")
+        if unit and start_date and end_date:
+            overlapping_contracts = RentalContract.objects.filter(
+                unit=unit,
+                end_date__gte=start_date,
+                start_date__lte=end_date,
+                is_cancelled=False
+            ).exclude(pk=self.instance.pk)
+            if overlapping_contracts.exists():
+               raise forms.ValidationError(_("الوحدة لديها عقود أخرى متداخلة في هذه الفترة"))
         return cleaned_data
+
+class InvoiceForm(forms.ModelForm):
+    remaining_balance = forms.DecimalField(label=_('الرصيد المتبقي'), required=False, disabled=True)
+    class Meta:
+        model = Invoice
+        fields = ['contract', 'invoice_date', 'due_date', 'amount', 'status', 'remaining_balance']
+        labels = {
+            'contract': _('عقد الايجار'),
+            'invoice_date': _('تاريخ الفاتورة'),
+            'due_date': _('تاريخ الاستحقاق'),
+            'amount': _('المبلغ'),
+            'status': _('الحالة'),
+            'remaining_balance': _('الرصيد المتبقي'),
+        }
+        widgets = {
+            'invoice_date': forms.DateInput(attrs={'type':'date'}),
+            'due_date': forms.DateInput(attrs={'type':'date'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:
+            self.fields['remaining_balance'].initial = self.instance.remaining_balance
+
+    def clean_due_date(self):
+        due_date = self.cleaned_data['due_date']
+        if due_date and due_date < self.cleaned_data.get('invoice_date'):
+            raise forms.ValidationError(_("تاريخ الاستحقاق يجب أن يكون بعد  تاريخ الفاتورة"))
+        return due_date
+
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['invoice', 'payment_date', 'amount_paid', 'transaction_id', 'payment_method']
+        labels = {
+            'invoice': _('عقد الايجار'),
+            'payment_date': _('تاريخ الدفع'),
+            'amount_paid': _('المبلغ المدفوع'),
+            'transaction_id': _('رقم المعاملة'),
+            'payment_method': _('طريقة الدفع'),
+        }
+        widgets = {
+            'payment_date': forms.DateInput(attrs={'type':'date'}),
+            'transaction_id': forms.TextInput(attrs={'placeholder': _('أدخل رقم المعاملة')})
+        }
+
+    def clean_amount_paid(self):
+        amount_paid = self.cleaned_data.get('amount_paid')
+        invoice = self.cleaned_data.get('invoice')
+        if amount_paid and amount_paid <= 0:
+            raise forms.ValidationError(_("المبلغ المدفوع يجب أن يكون أكبر من صفر"))
+        if amount_paid and invoice and amount_paid > invoice.remaining_balance:
+            raise forms.ValidationError(_("تاريخ الدفع لا يمكن أن يكون قبل تاريخ الفاتورة"))
+        return amount_paid
         
-    def save(self, commit=True):
-        contract = super().save(commit=False)
-        if commit:
-            contract.save()
-            if not contract.is_cancelled or self.cleaned_data.get("unit_status_override"):
-                contract.unit.status = "occupied"
-            else:
-                contract.unit.status = "available"
-            contract.unit.save()
-        return contract
+    def clean_payment_date(self):
+        payment_date = self.cleaned_data.get('payment_date')
+        invoice = self.cleaned_data.get('invoice')
+        if payment_date and invoice and payment_date < invoice.invoice_date:
+            raise forms.ValidationError(_("تاريخ الدفع لا يمكن أن يكون قبل تاريخ الفاتورة"))
+        return payment_date
+
+class ContractSearchForm(forms.Form):
+    tenant = forms.ModelChoiceField(queryset=Tenant.objects.all(), required=False, label=_("المستأجر"))
+    unit = forms.ModelChoiceField(queryset=Unit.objects.all(), required=False, label=_("الوحدة"))
+    start_date = forms.DateField(required=False, label=_("تاريخ البدء"))
+    end_date = forms.DateField(required=False, label=_("تاريخ النهاية"))
+
+    def filter_queryset(self, queryset):
+        tenant = self.cleaned_data.get('tenant')
+        unit = self.cleaned_data.get('unit')
+        start_date = self.cleaned_data.get('start_date')
+        end_date = self.cleaned_data.get('end_date')
+
+        if tenant:
+            queryset = queryset.filter(tenant=tenant)
+        if unit:
+            queryset = queryset.filter(unit=unit)
+        if start_date:
+            queryset = queryset.filter(start_date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(end_date__lte=end_date)
+        return queryset
+        
+class ContractFilterForm(forms.Form):
+    start_date = forms.DateField(label=_('تاريخ البدء'), required=False)
+    end_date = forms.DateField(label=_('تاريخ النهاية'), required=False)
+    def clean(self):
+        cleaned_data = super().clean()
+        start_date = cleaned_data.get('start_date')
+        end_date = cleaned_data.get('end_date')
+        if start_date and end_date and start_date > end_date:
+            raise forms.ValidationError(_("تاريخ البداية يجب أن يكون قبل  تاريخ النهاية"))
