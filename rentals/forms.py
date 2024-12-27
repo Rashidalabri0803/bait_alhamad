@@ -1,5 +1,5 @@
 from django import forms
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from .models import CustomUser, Tenant, Unit, RentalContract, Invoice, Payment
 
 class CustomUserForm(forms.ModelForm):
@@ -98,6 +98,7 @@ class InvoiceForm(forms.ModelForm):
     remaining_balance = forms.DecimalField(label=_('الرصيد المتبقي'), required=False, disabled=True)
     class Meta:
         model = Invoice
+        exclude = ['invoice_date']
         fields = ['contract', 'invoice_date', 'due_date', 'amount', 'status', 'remaining_balance']
         labels = {
             'contract': _('عقد الايجار'),
@@ -126,6 +127,7 @@ class InvoiceForm(forms.ModelForm):
 class PaymentForm(forms.ModelForm):
     class Meta:
         model = Payment
+        exclude = ['payment_date']
         fields = ['invoice', 'payment_date', 'amount_paid', 'transaction_id', 'payment_method']
         labels = {
             'invoice': _('عقد الايجار'),

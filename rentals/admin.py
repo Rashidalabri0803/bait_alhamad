@@ -113,7 +113,7 @@ class InvoiceAdmin(admin.ModelAdmin):
     total_payments.short_description = "إجمالي المدفوعات"
 
     @admin.action(description="تحديد الفواتير المدفوعة")
-    def mark_as_paid(self, request, queryset)::
+    def mark_as_paid(self, request, queryset):
         updated = queryset.update(status='Paid')
         self.messaage_user(request, f"تم تحديث {updated} فاتورة الى مدفوعة")
         
