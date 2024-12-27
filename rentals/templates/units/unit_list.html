@@ -1,18 +1,17 @@
-<!DOCTYPE html>
-<html lang="ar">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الوحدات</title>
-  </head>
-  <body>
-    <h1>إدارة الوحدات</h1>
-    <a href="{% url 'unit-create' %}">إضافة وحدة جديدة</a>
-    <table border="1">
+{% extends 'base.html' %}
+
+{% block title %}قائمة الوحدات{% endblock %}
+
+{% block content %}
+<h1>إدارة الوحدات</h1>
+<div class="text-right mb-3">
+  <a href="{% url 'unit-create' %}" class="btn btn-primary">إضافة وحدة جديدة</a>
+</div>
+    <table class="teble table-borderd">
       <thead>
         <tr>
           <th>#</th>
-          <th>رقم الوحدة</th>
+          <th>اسم الوحدة</th>
           <th>نوع الوحدة</th>
           <th>الحالة</th>
           <th>الإجراءات</th>
@@ -21,18 +20,21 @@
       <tbody>
         {% for unit in units %}
         <tr>
-          <td>{{ forloop.counter }}</td>
+          <td
+          <td>{{ unit.id }}</td>
           <td>{{ unit.unit_number }}</td>
           <td>{{ unit.get_unit_type_display }}</td>
           <td>{{ unit.get_status_display }}</td>
           <td>
-            <a href="{% url 'unit-detail' unit.id %}">عرض</a>
-            <a href="{% url 'unit-update' unit.id %}">تعديل</a>
-            <a href="{% url 'unit-delete' unit.id %}">حذف</a>
+            <a href="{% url 'rentals:unit_update' unit.id %}" class="btn btn-primary btn-sm">تعديل</a>
+            <a href="{% url 'rentals:unit_delete' unit.id %}" class="btn btn-danger btn-sm">حذف</a>
           </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center">لا يوجد وحدات</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-  </body>
-</html>
+{% endblock %}

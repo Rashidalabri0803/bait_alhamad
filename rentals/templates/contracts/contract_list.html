@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block title %}قائمة العقود{% endblock %}
+
+{% block content %}
+  <h1>قائمة العقود</h1>
+<div class="text-right mb-3">
+  <a href="{% url 'contracts:contract_create' %}" class="btn btn-primary">إضافة عقد جديد</a>
+</div>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>إسم الوحدة</th>
+        <th>إسم المستأجر</th>
+        <th>تاريخ البداية</th>
+        <th>تاريخ النهاية</th>
+        <th>الإجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for contract in contracts %}
+        <tr>
+          <td>{{ contract.id }}</td>
+          <td>{{ contract.unit.unit.name }}</td>
+          <td>{{ contract.user.username }}</td>
+          <td>{{ contract.start_date }}</td>
+          <td>{{ contract.end_date }}</td>
+          <td>
+            <a href="{% url 'contracts:contract_detail' contract.id %}" class="btn btn-info btn-sm">التفاصيل</a>
+            <a href="{% url 'contracts:contract_update' contract.id %}" class="btn btn-warning btn-sm">تعديل</a>
+            <a href="{% url 'contracts:contract_delete' contract.id %}" class="btn btn-danger btn-sm">حذف</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">لا توجد عقود</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

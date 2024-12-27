@@ -1,0 +1,15 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'rentals:unit_list' %}">نظام إدارة الايجارات</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="{% url 'rentals:unit_list' %}">الوحدات</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'rentals:contrac_list' %}">العقود</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'rentals:invoice_list' %}">الفواتير</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'rentals:payment_list' %}">المدفوعات</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>

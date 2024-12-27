@@ -1,17 +1,15 @@
-<!DOCTYPE html>
-<html lang="ar">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>حذف وحدة</title>
-  </head>
-  <body>
-    <h1> حذف وحدة {{ object.unit_number }}</h1>
-    <p>هل أنت متأكد تريد حذف هذه الوحدة؟</p>
+{% extends 'base.html' %}
+
+{% block title %} تأكيد حذف الوحدة {% endblock %}
+
+{% block content %}
+<h1>
+   تأكيد حذف الوحدة
+</h1>
+    <p>هل أنت متأكد تريد حذف هذه الوحدة؟"{{ object.unit_number }}"؟</p>
     <form method="post">
       {% csrf_token %}
-      <button type="submit">نعم حذف</button>
-      <a href="{% url 'unit-list' %}">الغاء</a>
+      <button type="submit" class="btn btn-danger">حذف</button>
+      <a href="{% url 'rentals:unit_list' %}" class="btn btn-secondary">الغاء</a>
     </form>
-  </body>
-</html>
+{% endblock %}
