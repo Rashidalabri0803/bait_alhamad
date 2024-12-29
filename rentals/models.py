@@ -4,9 +4,9 @@ from django.core.validators import MinValueValidator, RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
-from datetime import timedelta
+from datetime import timedelta, date
 
-#نموذج المستخدم
+# **نموذج المستخدم المخصص**
 class CustomUser(AbstractUser):
   USER_TYPES_CHOICES = (
     ('admin', _('مشرف')),
@@ -36,6 +36,7 @@ class CustomUser(AbstractUser):
   def __str__(self):
     return self.username
 
+# **نموذج الوحدة**
 class Unit(models.Model):
   UNIT_TYPE_CHOICES = [
     ('apartment', _('شقة')),
@@ -45,16 +46,23 @@ class Unit(models.Model):
   STATUS_CHOICES = [
     ('available', _('متوفر')),
     ('accupied', _('مؤجرة')),
+    ('maintenance', _('تحت الصيانة')),
   ]
+  unit_number = models.CharField(
+    max_length=50,
+    unique=True,
+    verbose_name=_("رقم الوحدة")
+  )
   unit_type = models.CharField(
     max_length=20,
     choices=UNIT_TYPE_CHOICES,
     verbose_name=_("نوع الوحدة")
   )
-  unit_number = models.CharField(
-    max_length=50,
-    unique=True,
-    verbose_name=_("رقم الوحدة")
+  status = models.CharField(
+    max_length=20,
+    choices=STATUS_CHOICES,
+    default='available',
+    verbose_name=_("الحالة")
   )
   rent_price = models.DecimalField(
     max_digits=10,
@@ -70,12 +78,6 @@ class Unit(models.Model):
     max_length=50,
     verbose_name=_("رقم حساب المياه")
   )
-  status = models.CharField(
-    max_length=20,
-    choices=STATUS_CHOICES,
-    default='available',
-    verbose_name=_("الحالة")
-  )
   description = models.TextField(
     blank=True,
     null=True,
@@ -89,36 +91,17 @@ class Unit(models.Model):
   def __str__(self):
     return f"{self.get_unit_type_display()} - {self.unit_number}"
 
-class UnitImage(models.Model):
-  unit = models.ForeignKey(
-    Unit,
-    on_delete=models.CASCADE,
-    related_name='images',
-    verbose_name=_("الوحدة")
-  )
-  image = models.ImageField(
-    upload_to='unit_images/',
-    verbose_name=_("صورة الوحدة")
-  )
-  uploaded_at = models.DateTimeField(
-    auto_now_add=True,
-    verbose_name=_("تاريخ الرفع")
-  )
-  class Meta:
-    verbose_name=_("صورة الوحدة")
-    verbose_name_plural=_("صور الوحدات")
-  def __str__(self):
-    return f"{self.unit.unit_number}"
+  def is_available(self):
+    """التحقق إذا كانت الوحدة المتاحة"""
+    return self.status == 'available'
 
+# **نموذج المستأجر**
 class Tenant(models.Model):
   user = models.OneToOneField(
     CustomUser,
     on_delete=models.CASCADE,
+    relate_name='tenant',
     verbose_name=_("المستخدم")
-  )
-  tenant_type = models.CharField(
-    max_length=50,
-    verbose_name=_("نوع المستأجر")
   )
   company_name = models.CharField(
     max_length=100,
@@ -126,7 +109,7 @@ class Tenant(models.Model):
     null=True,
     verbose_name=_("اسم الشركة")
   )
-  commercial_record_number = models.CharField(
+  commercial_registration_number = models.CharField(
     max_length=50,
     blank=True,
     null=True,
@@ -140,6 +123,7 @@ class Tenant(models.Model):
   def __str__(self):
     return self.user.username
 
+# **نموذج عقد الايجار**
 class RentalContract(models.Model):
   unit = models.ForeignKey(
     Unit,
@@ -169,50 +153,12 @@ class RentalContract(models.Model):
   municipality_fees = models.DecimalField(
     max_digits=10,
     decimal_places=2,
-    blank=True,
-    null=True,
-    verbose_name=_("رسوم البلدية")
-  )
-  electricity_previous = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    blank=True,
-    null=True,
-    verbose_name=_("فاتورة الكهرباء السابق")
-  )
-  electricity_current = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    blank=True,
-    null=True,
-    verbose_name=_("فاتورة الكهرباء الحالي")
-  )
-  water_previous = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    blank=True,
-    null=True,
-    verbose_name=_("فاتورة المياه السابق")
-  )
-  water_current = models.DecimalField(
-    max_digits=10,
-    decimal_places=2,
-    blank=True,
-    null=True,
-    verbose_name=("فاتورة المياه الحالي")
+    default=0,
+    verbose_name=_("الرسوم البلدية")
   )
   is_cancelled = models.BooleanField(
     default=False,
     verbose_name=_("ملغى")
-  )
-  notes = models.TextField(
-    blank=True,
-    null=True,
-    verbose_name=_("ملاحظات العقد")
-  )
-  notification_sent = models.BooleanField(
-    default=False,
-    verbose_name=_("تم ارسال التنبيه")
   )
   created_at = models.DateTimeField(
     auto_now_add=True,
@@ -224,33 +170,30 @@ class RentalContract(models.Model):
   )
   @property
   def days_left(self):
+    """حساب عدد الايام المتبقية لانتهاء العقد"""
     if self.end_date and not self.is_cancelled:
-      return max((self.end_date - now().date()).days, 0)
+      return max((self.end_date - date.today()).days, 0)
     return 0
-  @property
-  def calculate_monthly_rent(self):
-    if not self.monthly_rent and self.unit:
-      return self.unit.rent_price
-    return self.monthly_rent
+
   @property
   def calculate_municipality_fees(self):
-    monthly_rent = self.calculate_monthly_rent
-    if monthly_rent:
-      return monthly_rent * 12 * 0.03
-    return 0
+    """حساب رسوم البلدية (الايجار الشهري * ١٢ * ٣٪)"""
+    return self.monthly_rent * 12 * 0.03
+
   def clean(self):
+    """التاكد من صحة تواريخ البداية والنهاية"""
     if self.end_date <= self.start_date:
-      raise ValidationError(_("تاريخ النهاية يجب أن يكون بعد تاريخ البداية"))
-    if self.unit.status == 'rented':
-      raise ValidationError(_("هذه الوحدة مؤجرة بالفعل"))
+      raise ValidationError(_("تاريخ النهاية يجب أن يكون أكبر من تاريخ البداية"))
+
   def save(self, *args, **kwargs):
-    self.municipality_fees = self.calculate_municipality_fees
+    """تحديث رسوم البلدية وحالة الوحدة عند الحفظ"""
+    self.calculate_municipality_fees = self.calculate_municipality_fees
     if not self.is_cancelled:
       self.unit.status = 'rented'
-      self.unit.save()
+      self.save()
     else:
       self.unit.status = 'available'
-      self.unit.save()
+      self.save()
     super().save(*args, **kwargs)
 
   class Meta:
@@ -258,11 +201,12 @@ class RentalContract(models.Model):
     verbose_name_plural=_("عقود الإيجار")
 
   def __str__(self):
-    return f"عقد {self.unit} - {self.tenant}"
+    return f"عقد للوحدة {self.unit} - {self.tenant}"
 
+# **نموذج الفاتورة**
 class Invoice(models.Model):
   STATUS_CHOICES = (
-    ('pending', _('مستحقة')),
+    ('pending', _('معلقة')),
     ('paid', _('مدفوعة')),
     ('overdue', _('متأخرة')),
   )
@@ -292,28 +236,30 @@ class Invoice(models.Model):
     default='pending',
     verbose_name=_("حالة الفاتورة")
   )
-  is_paid = models.BooleanField(
-    default=False,
-    verbose_name=_("مدفوع")
-  )
+
   @property
-  def remaining_days(self):
-    total_paid = self.payments.aggregate(total.Sum('amount_paid'))['total'] or 0
+  def remaining_balance(self):
+    """حساب الرصيد المتبقي للفاتورة"""
+    total_paid = self.payments.aggregate(total=models.Sum('amount_paid'))['total'] or 0
     return max(self.amount - total_paid, 0)
+
   def save(self, *args, **kwargs):
-    if self.remaining_balance == 0:
+    """تحديث حالة الفاتورة بناء على الرصيد المتبقي"""
+    if self.remaining_balance ==0:
       self.status = 'paid'
-    elif self.due_date < now().date() and self.remaining_balance > 0:
+    elif self.due_date < date.today() and self.remaining_balance > 0:
       self.status = 'overdue'
     else:
       self.status = 'pending'
     super().save(*args, **kwargs)
+    
   class Meta:
     verbose_name=_("فاتورة")
     verbose_name_plural=_("فواتير")
   def __str__(self):
-    return f"فاتورة {self.contract} - {self.invoice_date}"
+    return f"فاتورة بمبلغ {self.amount} للعقد {self.contract}"
 
+# ** نموذج الدفع **
 class Payment(models.Model):
   invoice = models.ForeignKey(
     Invoice,
@@ -330,12 +276,6 @@ class Payment(models.Model):
     decimal_places=2,
     verbose_name=_("المبلغ المدفوع")
   )
-  transaction_id = models.CharField(
-    max_length=50,
-    blank=True,
-    null=True,
-    verbose_name=_("رقم المعاملة")
-  )
   payment_method = models.CharField(
     max_length=50,
     choices = (
@@ -348,25 +288,4 @@ class Payment(models.Model):
     verbose_name=_("دفعة")
     verbose_name_plural=_("دفعات")
   def __str__(self):
-    return f"دفعة {self.amount_paid} - {self.invoice.id}"
-
-class ContractAttachment(models.Model):
-  contract = models.ForeignKey(
-    RentalContract,
-    on_delete=models.CASCADE,
-    related_name='attachments',
-    verbose_name=_("عقد الإيجار")
-  )
-  file = models.FileField(
-    upload_to='attachments/',
-    verbose_name=_("الملف")
-  )
-  uploaded_at = models.DateTimeField(
-    auto_now_add=True,
-    verbose_name=_("تاريخ الرفع")
-  )
-  class Meta:
-    verbose_name=_("مرفق")
-    verbose_name_plural=_("مرفقات")
-  def __str__(self):
-    return f"مرفق {self.contract}"
+    return f"دفعة بمبلغ {self.amount_paid} للفاتورة {self.invoice.id}"
