@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.urls import reverse
 from django.contrib import messages
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils.timezone import now
 from django.core.paginator import Paginator
 from datetime import timedelta
@@ -14,16 +14,47 @@ from .forms import(
 ) 
 
 def dashboard(request):
+  # ملخص شامل للعقارات
     total_units = Unit.objects.count()
-    total_contracts = RentalContract.objects.count()
+    available_units = Unit.objects.filter(status='available').count()
+    rented_units = Unit.objects.filter(status='rented').count()
+  # ملخص شامل للمستأجرون
+    total_tenants = Tenant.objects.count()
+  # الايجارات المستحقة
     total_invoices = Invoice.objects.count()
     overdue_invoices = Invoice.objects.filter(status='overdue').count()
-    return render(request, 'dashboard.html', {
+    total_income = Invoice.objects.filter(status= 'paid').aggregate(total=Sum('amount'))['total'] or 0
+    # chart.js البيانات لتكامل الرسوم البيانية مع
+    unit_data = {
+      'labels': ['متوفر', 'مؤجرة', 'تحت الصيانة'],
+      'data': [
+        Unit.objects.filter(status='available').count(),
+        Unit.objects.filter(status='rented').count(),
+        Unit.objects.filter(status='maintenance').count(),
+      ]
+    }
+
+    overdue_data = {
+      'labels': ['متأخرة', 'مدفوعة', 'معلق'],
+      'data': [
+        Invoice.objects.filter(status='overdue').count(),
+        Invoice.objects.filter(status='paid').count(),
+        Invoice.objects.filter(status='pending').count(),
+      ]
+    }
+
+    context = {
         'total_units': total_units,
-        'total_contracts': total_contracts,
+        'available_units': available_units,
+        'rented_units': rented_units,
+        'total_tenants': total_tenants,
         'total_invoices': total_invoices,
-        'overdue_invoices': overdue_invoices
-    })
+        'overdue_invoices': overdue_invoices,
+        'total_income': total_income,
+        'unit_data': unit_data,
+        'overdue_data': overdue_data,
+    }
+    return render(request, 'dashboard.html', context)
   
 def unit_list(request):
     form = UnitFilterForm(request.GET or None)
