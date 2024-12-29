@@ -4,6 +4,7 @@ from . import views
 app_name = 'rentals'
 
 urlpatterns = [
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('units/', views.unit_list, name='unit_list'),
     path('units/create/', views.unit_create_or_update, name='unit_update'),
     path('units/<int:pk>/delete/', views.unit_delete, name='unit_delete'),

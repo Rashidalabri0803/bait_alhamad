@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rentals</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzIA5k8PRbCq889qLq7ftg7m40GLHgJ4" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="container my-5">
+      <h1 class="text-center mb-4">لوحة التحكم</h1>
+      <div class="row text-center">
+        <div class="col-md-4">
+          <div class="card bg-light p-3">
+            <h3>العقارات</h3>
+            <p>إجمالي: {{ total_units }}</p>
+            <p>متوفر: {{ available_units }}</p>
+            <p>مؤجر: {{ rented_units }}</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-light p-3">
+            <h3>المستأجرين</h3>
+            <p>إجمالي: {{ total_tenants }}</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card bg-light p-3">
+            <h3>الايجارات</h3>
+            <p>إجمالي الفواتير المتأخرة: {{ total_invoices }}</p>
+            <p>المتأخرة: {{ overdue_invoices }}</p>
+            <p>إجمالي الإيرادات المدفوعة: {{ total_income }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-5">
+        <div class="col-md-6">
+          <h4>حالة العقارات</h4>
+          <canvas id="unitChart"></canvas>
+        </div>
+        <div class="col-md-6">
+          <h4>الايجارات</h4>
+          <canvas id="invoicetChart"></canvas>
+        </div>
+      </div>
+    </div>
+    <script>
+        const unitData = {
+            labels: {{ unit_data.labels|safe }},
+            datasets: [{
+                label: 'حالة العقارات',
+                data: {{ unit_data.data|safe }},
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              }]
+        };
+        const overdueData = {
+            labels: {{ overdue_data.labels|safe }},
+            datasets: [{
+                label: 'الايجارات',
+                data: {{ overdue_data.data|safe }},
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            }]
+        };
+        new Chart(document.getElementById('unitChart'),{
+            type: 'pie',
+            data: unitData,
+        });
+        new Chart(document.getElementById('invoicetChart'), {
+            type: 'doughnut',
+            data: overdueData,
+        });
+    </script>
+  </body>
+</html>

@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
+from django.db.models import Prefetch
 from django.urls import reverse
 from django.contrib import messages
 from django.db.models import Count, Sum
@@ -14,6 +15,7 @@ from .forms import(
 ) 
 
 def dashboard(request):
+    invoices = Invoice.objects.select_related('content__unit', 'content__tenant')
   # ملخص شامل للعقارات
     total_units = Unit.objects.count()
     available_units = Unit.objects.filter(status='available').count()
