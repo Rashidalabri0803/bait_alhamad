@@ -51,7 +51,7 @@
             datasets: [{
                 label: 'حالة العقارات',
                 data: {{ unit_data.data|safe }},
-                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                backgroundColor: ['#28a745', '#dc3545', '#ffc107'],
               }]
         };
         const overdueData = {
@@ -59,7 +59,7 @@
             datasets: [{
                 label: 'الايجارات',
                 data: {{ overdue_data.data|safe }},
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                backgroundColor: ['#dc3545', '#28a745', '#ffc107'],
             }]
         };
         new Chart(document.getElementById('unitChart'),{
