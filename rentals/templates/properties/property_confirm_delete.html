@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>حذف العقار</title>
+  </head>
+  <body>
+    <h1>حذف العقار</h1>
+    <p>هل أنت متأكد من أنك تريد حذف العقار "{{ object.name }}"؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">نعم، حذف</button>
+    </form>
+    <a href="{% url 'property_list' %}">إلغاء</a>
+  </body>
+</html>

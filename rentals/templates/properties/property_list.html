@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>العقارات</title>
+  </head>
+  <body>
+    <h1>قائمة العقارات</h1>
+    <a href="{% url 'property_create' %}">إضافة عقار جديد</a>
+    
+    <table border="1">
+      <thead>
+        <tr>
+          <th>اسم العقار</th>
+          <th>نوع العقار</th>
+          <th>الحالة</th>
+          <th>العنوان</th>
+          <th>خيارات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for property in properties %}
+          <tr>
+            <td>{{ property.name }}</td>
+            <td>{{ property.get_property_type_display }}</td>
+            <td>{{ property.get_status_display }}</td>
+            <td>{{ property.address }}</td>
+            <td>
+              <a href="{% url 'property_update' property.id %}">تعديل</a>
+              <a href="{% url 'property_delete' property.id %}">حذف</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">لا توجد عقارات</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>
