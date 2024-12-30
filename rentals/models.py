@@ -4,8 +4,6 @@ from django.contrib.auth.models import User
 from django.utils.timezone import now
 from datetime import date
 
-class Unit(models.Model):
-  pass
 class Property(models.Model):
   PROPERTY_TYPE_CHOICES = (
     ('apartment', _('شقة')),
@@ -55,7 +53,7 @@ class Tenant(models.Model):
     return self.user.username
 
 class RentalContract(models.Model):
-  unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='contracts', verbose_name=_('العقار'))
+  unit = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='contracts', verbose_name=_('العقار'))
   tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='contracts', verbose_name=_('المستأجر'))
   start_date = models.DateField(verbose_name=_('تاريخ البدء'))
   end_date = models.DateField(verbose_name=_('تاريخ النهاية'))
@@ -81,7 +79,7 @@ class RentalContract(models.Model):
     verbose_name_plural = _('عقود الإيجار')
 
   def __str__(self):
-    return f"عقد إيجار للوحدة {self.unit.unit_number} - {self.tenant.user.username}"
+    return f"عقد إيجار للوحدة {self.Property.Property_number} - {self.tenant.user.username}"
 
 class Invoice(models.Model):
   STATUS_CHOICES = (

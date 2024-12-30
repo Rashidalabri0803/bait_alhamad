@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Sum
-from .models import Unit, Invoice, Tenant, Property,RentalContract, Payment
+from .models import Property, Invoice, Tenant, Property,RentalContract, Payment
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm
@@ -9,9 +9,9 @@ from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm
 
 def dashboard(request):
   # ملخص شامل للعقارات
-    total_units = Unit.objects.count()
-    available_units = Unit.objects.filter(status='available').count()
-    rented_units = Unit.objects.filter(status='rented').count()
+    total_units = Property.objects.count()
+    available_units = Property.objects.filter(status='available').count()
+    rented_units = Property.objects.filter(status='rented').count()
   # ملخص شامل للمستأجرون
     total_tenants = Tenant.objects.count()
   # الايجارات المستحقة
@@ -22,9 +22,9 @@ def dashboard(request):
     unit_data = {
       'labels': ['متوفر', 'مؤجرة', 'تحت الصيانة'],
       'data': [
-        Unit.objects.filter(status='available').count(),
-        Unit.objects.filter(status='rented').count(),
-        Unit.objects.filter(status='maintenance').count(),
+        Property.objects.filter(status='available').count(),
+        Property.objects.filter(status='rented').count(),
+        Property.objects.filter(status='maintenance').count(),
       ]
     }
 
