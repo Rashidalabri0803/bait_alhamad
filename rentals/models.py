@@ -38,6 +38,7 @@ class Tenant(models.Model):
     ('individual', _('فرد')),
     ('company', _('شركة')),
   )
+  user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tenant', verbose_name=_('المستخدم'))
   tenant_type = models.CharField(max_length=20, choices=TENANT_TYPE_CHOICES, verbose_name=_('نوع المستأجر'))
   company_name = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('اسم الشركة'))
   commercial_registration_number = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('رقم التسجيل التجاري'))
