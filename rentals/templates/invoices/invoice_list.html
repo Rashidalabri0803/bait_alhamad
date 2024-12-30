@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>قائمة الفواتير</title>
+  </head>
+  <body>
+    <h1>قائمة الفواتير</h1>
+    
+    <table border="1">
+      <thead>
+        <tr>
+          <th>رقم الفاتورة</th>
+          <th>العقد</th>
+          <th>تاريخ الفاتورة</th>
+          <th>المبلغ</th>
+          <th>الحالة</th>
+          <th>خيارات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+          <tr>
+            <td>{{ invoice.id }}</td>
+            <td>{{ invoice.contract.unit.unit_number }}</td>
+            <td>{{ invoice.invoice_date }}</td>
+            <td>{{ invoice.amount }}</td>
+            <td>{{ invoice.get_status_display }}</td>
+            <td>
+              <a href="{% url 'generate_invoice_pdf' invoice.id %}">توليد PDF</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6">لا توجد فواتير</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

@@ -13,6 +13,9 @@ from views import (
     RentalContractCreateView,
     RentalContractUpdateView,
     RentalContractDeleteView,
+    InvoiceListView,
+    PaymentCreateView,
+    generate_invoice_pdf,
 )
 app_name = 'rentals'
 
@@ -30,4 +33,7 @@ urlpatterns = [
     path('rental-contracts/create/', RentalContractCreateView.as_view(), name='rentalcontract_create'),
     path('rental-contracts/<int:pk>/update/', RentalContractUpdateView.as_view(), name='rentalcontract_update'),
     path('rental-contracts/<int:pk>/delete/', RentalContractDeleteView.as_view(), name='rentalcontract_delete'),
+    path('invoices/', InvoiceListView.as_view(), name='invoice_list'),
+    path('payments/create/', PaymentCreateView.as_view(), name='payment_create'),
+    path('invoices/pdf/<int:pk>/', generate_invoice_pdf, name='generate_invoice_pdf'),
 ]

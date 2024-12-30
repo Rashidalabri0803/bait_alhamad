@@ -1,5 +1,5 @@
 from django import forms
-from .models import Property, Tenant, RentalContract
+from .models import Property, Tenant, RentalContract, Payment
 
 class PropertyForm(forms.ModelForm):
     class Meta:
@@ -43,4 +43,14 @@ class RentalContractForm(forms.ModelForm):
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+class PaymentForm(forms.ModelForm):
+    class Meta:
+        model = Payment
+        fields = ['invoice', 'amount_paid', 'payment_method']
+        labels = {
+            'invoice': 'الفاتورة',
+            'amount_paid': 'المبلغ المدفوع',
+            'payment_method': 'طريقة الدفع',
         }

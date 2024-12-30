@@ -78,4 +78,36 @@ class RentalContract(models.Model):
     verbose_name_plural = _('عقود الإيجار')
 
   def __str__(self):
-    return f'عقد إيجار للوحدة {self.unit.unit_number} - {self.tenant.user.username}'
+    return f"عقد إيجار للوحدة {self.unit.unit_number} - {self.tenant.user.username}"
+
+class Invoice(models.Model):
+  STATUS_CHOICES = (
+    ('pending', _('معلقة')),
+    ('paid', _('مدفوعة')),
+    ('overdue', _('متأخرة')),
+  )
+  contract = models.ForeignKey(RentalContract, on_delete=models.CASCADE, related_name='invoices', verbose_name=_('عقد الإيجار'))
+  invoice_date = models.DateField(auto_now_add=True, verbose_name=_('تاريخ الفاتورة'))
+  due_date = models.DateField(verbose_name=_('تاريخ الاستحقاق'))
+  amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('المبلغ المستحق'))
+  status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name=_('الحالة'))
+
+  class Meta:
+    verbose_name = _('فاتورة')
+    verbose_name_plural = _('الفواتير')
+
+  def __str__(self):
+    return f"فاتورة للعقد {self.contract} بمبلغ {self.amount}"
+
+class Payment(models.Model):
+  invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='payments', verbose_name=_('الفاتورة'))
+  payment_date = models.DateField(auto_now_add=True, verbose_name=_('تاريخ الدفع'))
+  amount_paid = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('المبلغ المدفوع'))
+  payment_method = models.CharField(max_length=50, choices=(('credit_card', _('بطاقة الائتمان')), ('bank_transfer', _('تحويل بنكي'))), verbose_name=_('طريقة الدفع'))
+
+  class Meta:
+    verbose_name = _('دفعة')
+    verbose_name_plural = _('الدفعات')
+
+  def __str__(self):
+    return f"دفعة بقيمة {self.amount_paid} للفاتورة {self.invoice.id}"
