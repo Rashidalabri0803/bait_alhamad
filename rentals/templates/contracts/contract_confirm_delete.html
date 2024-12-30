@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>حذف عقد إيجار</title>
+  </head>
+  <body>
+    <h1>حذف عقد الايجار</h1>
+    <p>هل أنت متأكد من حذف عقد الإيجار ؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">نعم' حذف</button>
+      <a href="{% url 'rentalcontract_list' %}">إلغاء</a>
+    </form>
+  </body>
+</html>

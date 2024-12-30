@@ -9,6 +9,10 @@ from views import (
     TenantCreateView,
     TenantUpdateView,
     TenantDeleteView,
+    RentalContractListView,
+    RentalContractCreateView,
+    RentalContractUpdateView,
+    RentalContractDeleteView,
 )
 app_name = 'rentals'
 
@@ -22,4 +26,8 @@ urlpatterns = [
     path('tenants/create/', TenantCreateView.as_view(), name='tenant_create'),
     path('tenants/<int:pk>/update/', TenantUpdateView.as_view(), name='tenant_update'),
     path('tenants/<int:pk>/delete/', TenantDeleteView.as_view(), name='tenant_delete'),
+    path('rental-contracts/', RentalContractListView.as_view(), name='rentalcontract_list'),
+    path('rental-contracts/create/', RentalContractCreateView.as_view(), name='rentalcontract_create'),
+    path('rental-contracts/<int:pk>/update/', RentalContractUpdateView.as_view(), name='rentalcontract_update'),
+    path('rental-contracts/<int:pk>/delete/', RentalContractDeleteView.as_view(), name='rentalcontract_delete'),
 ]
