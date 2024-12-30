@@ -16,7 +16,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     webbrowser.open('http://localhost:8000')
-    execute_from_command_line(sys.argv + ['runserver', '8000', '--noreload'])
+    execute_from_command_line(sys.argv + ['runserver', '0.0.0.0:8000', '--noreload'])
 
 if __name__ == '__main__':
     main()
