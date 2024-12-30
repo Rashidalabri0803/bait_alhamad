@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>المستأجرون</title>
+  </head>
+  <body>
+    <h1>قائمة المستأجرون</h1>
+    <a href="{% url 'tenant_create' %}">إضافة مستأجر جديد</a>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>اسم المستخدم</th>
+          <th>نوع المستأجر</th>
+          <th>اسم الشركة</th>
+          <th>عنوان</th>
+          <th>خيارات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tenant in tenants %}
+          <tr>
+            <td>{{ tenant.user.username }}</td>
+            <td>{{ tenant.get_tenant_type_display }}</td>
+            <td>{{ tenant.company_name }}</td>
+            <td>{{ tenant.address }}</td>
+            <td>
+              <a href="{% url 'tenant_update' tenant.id %}">تعديل</a>
+              <a href="{% url 'tenant_delete' tenant.id %}">حذف</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">لا توجد مستأجرون</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

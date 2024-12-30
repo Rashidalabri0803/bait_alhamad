@@ -3,7 +3,7 @@ from django.db.models import Count, Sum
 from .models import Unit, Invoice, Tenant, Property
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import PropertyForm
+from .forms import PropertyForm, TenantForm
 
 def dashboard(request):
   # ملخص شامل للعقارات
@@ -73,3 +73,29 @@ class PropertyDeleteView(DeleteView):
     model = Property
     template_name = 'properties/property_confirm_delete.html'
     success_url = reverse_lazy('property_list')
+
+# عرض قائمة المستأجرين
+class TenantListView(ListView):
+    model = Tenant
+    template_name = 'tenants/tenant_list.html'
+    context_object_name = 'tenants'
+
+# إضافة مستأجر جديد
+class TenantCreateView(CreateView):
+    model = Tenant
+    form_class = TenantForm
+    template_name = 'tenants/tenant_form.html'
+    success_url = reverse_lazy('tenant_list')
+
+# تعديل مستأجر
+class TenantUpdateView(UpdateView):
+    model = Tenant
+    form_class = TenantForm
+    template_name = 'tenants/tenant_form.html'
+    success_url = reverse_lazy('tenant_list')
+
+# حذف مستأجر
+class TenantDeleteView(DeleteView):
+    model = Tenant
+    template_name = 'tenants/tenant_confirm_delete.html'
+    success_url = reverse_lazy('tenant_list')
