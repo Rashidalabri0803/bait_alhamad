@@ -4,8 +4,8 @@ from .models import Unit, Invoice, Tenant, Property,RentalContract, Payment
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm
-from django.http import HttpResponse
-from weasyprint import HTML
+#from django.http import HttpResponse
+#from weasyprint import HTML
 
 def dashboard(request):
   # ملخص شامل للعقارات
@@ -142,11 +142,11 @@ class PaymentCreateView(CreateView):
     success_url = reverse_lazy('invoice_list')
 
 # توليد فاتورة PDF
-def generate_invoice_pdf(request, pk):
-    invoice = get_object_or_404(Invoice, pk=pk)
-    context = {'invoice': invoice}
-    html = render(request, 'invoices/invoice_pdf.html', context)
-    pdf = HTML(string=html).write_pdf()
+#def generate_invoice_pdf(request, pk):
+    #invoice = get_object_or_404(Invoice, pk=pk)
+    #context = {'invoice': invoice}
+    #html = render(request, 'invoices/invoice_pdf.html', context)
+    #pdf = HTML(string=html).write_pdf()
 
-    response = HttpResponse(pdf, content_type='application/pdf') if pdf else HttpResponse(status=404)
-    response['Content-Disposition'] = f'inline; filename="invoice_{invoice.id}.pdf"'
+    #response = HttpResponse(pdf, content_type='application/pdf') if pdf else HttpResponse(status=404)
+    #response['Content-Disposition'] = f'inline; filename="invoice_{invoice.id}.pdf"'
