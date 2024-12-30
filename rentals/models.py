@@ -17,7 +17,7 @@ class Property(models.Model):
     ('rented', _('مؤجرة')),
     ( 'maintenance', _('تحت الصيانة')),
   )
-  user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tenant', verbose_name=_('المستخدم'))
+  user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='properties', verbose_name=_('المستخدم'))
   name = models.CharField(max_length=100, verbose_name=_('اسم العقار'))
   property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='available', verbose_name=_('الحالة'))
   status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', verbose_name=_('الحالة'))

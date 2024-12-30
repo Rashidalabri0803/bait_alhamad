@@ -1,26 +1,8 @@
 from django.urls import path
-from . import views
-from views import (
-    PropertyListView,
-    PropertyCreateView,
-    PropertyUpdateView,
-    PropertyDeleteView,
-    TenantListView,
-    TenantCreateView,
-    TenantUpdateView,
-    TenantDeleteView,
-    RentalContractListView,
-    RentalContractCreateView,
-    RentalContractUpdateView,
-    RentalContractDeleteView,
-    InvoiceListView,
-    PaymentCreateView,
-    generate_invoice_pdf,
-)
-app_name = 'rentals'
+from .views import dashboard,PropertyListView,PropertyCreateView,PropertyUpdateView,PropertyDeleteView,TenantListView,TenantCreateView,TenantUpdateView,TenantDeleteView,RentalContractListView,RentalContractCreateView,RentalContractUpdateView,RentalContractDeleteView,InvoiceListView,PaymentCreateView
 
 urlpatterns = [
-    path('dashboard/', views.dashboard, name='dashboard'),
+    path('dashboard/', dashboard, name='dashboard'),
     path('properties/', PropertyListView.as_view(), name='property_list'),
     path('properties/create/', PropertyCreateView.as_view(), name='property_create'),
     path('properties/<int:pk>/update/', PropertyUpdateView.as_view(), name='property_update'),
@@ -35,5 +17,5 @@ urlpatterns = [
     path('rental-contracts/<int:pk>/delete/', RentalContractDeleteView.as_view(), name='rentalcontract_delete'),
     path('invoices/', InvoiceListView.as_view(), name='invoice_list'),
     path('payments/create/', PaymentCreateView.as_view(), name='payment_create'),
-    path('invoices/pdf/<int:pk>/', generate_invoice_pdf, name='generate_invoice_pdf'),
+    #path('invoices/pdf/<int:pk>/', generate_invoice_pdf, name='generate_invoice_pdf'),
 ]
