@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.utils.timezone import now
 from datetime import date
 
+class Unit(models.Model):
+  pass
 class Property(models.Model):
   PROPERTY_TYPE_CHOICES = (
     ('apartment', _('شقة')),
