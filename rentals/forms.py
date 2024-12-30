@@ -1,5 +1,5 @@
 from django import forms
-from .models import Property, Tenant
+from .models import Property, Tenant, RentalContract
 
 class PropertyForm(forms.ModelForm):
     class Meta:
@@ -27,4 +27,20 @@ class TenantForm(forms.ModelForm):
             'commercial_registration_number': 'رقم التسجيل التجاري',
             'address': 'عنوان',
             'phone_number': 'رقم الهاتف'
+        }
+
+class RentalContractForm(forms.ModelForm):
+    class Meta:
+        model = RentalContract
+        fields = ['unit', 'tenant', 'start_date', 'end_date', 'monthly_rent']
+        labels = {
+            'unit': 'الوحدة',
+            'tenant': 'المستأجر',
+            'start_date': 'تاريخ البدء',
+            'end_date': 'تاريخ النهاية',
+            'monthly_rent': 'الايجار الشهري',
+        }
+        widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
         }

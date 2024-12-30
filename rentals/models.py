@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
+from django.utils.timezone import now
+from datetime import date
 
 class Property(models.Model):
   PROPERTY_TYPE_CHOICES = (
@@ -13,6 +15,7 @@ class Property(models.Model):
     ('rented', _('مؤجرة')),
     ( 'maintenance', _('تحت الصيانة')),
   )
+  user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tenant', verbose_name=_('المستخدم'))
   name = models.CharField(max_length=100, verbose_name=_('اسم العقار'))
   property_type = models.CharField(max_length=20, choices=PROPERTY_TYPE_CHOICES, default='available', verbose_name=_('الحالة'))
   status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available', verbose_name=_('الحالة'))
@@ -47,3 +50,32 @@ class Tenant(models.Model):
 
   def __str__(self):
     return self.user.username
+
+class RentalContract(models.Model):
+  unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='contracts', verbose_name=_('العقار'))
+  tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='contracts', verbose_name=_('المستأجر'))
+  start_date = models.DateField(verbose_name=_('تاريخ البدء'))
+  end_date = models.DateField(verbose_name=_('تاريخ النهاية'))
+  monthly_rent = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('الايجار الشهري'))
+  is_active = models.BooleanField(default=True, verbose_name=_('نشط'))
+  created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الإنشاء'))
+  updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+
+  @property
+  def days_left(self):
+    """عدد الأيام المتبقية لانتهاء العقد"""
+    if self.is_active and self.end_date:
+      return max((self.end_date - date.today()).days, 0)
+    return 0
+
+  def save(self, *args, **kwargs):
+    if self.end_date < date.today():
+      self.is_active = False
+    super().save(*args, **kwargs)
+
+  class Meta:
+    verbose_name = _('عقد الايجار')
+    verbose_name_plural = _('عقود الإيجار')
+
+  def __str__(self):
+    return f'عقد إيجار للوحدة {self.unit.unit_number} - {self.tenant.user.username}'

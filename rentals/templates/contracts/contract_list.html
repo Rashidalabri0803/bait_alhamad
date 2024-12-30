@@ -1,42 +1,45 @@
-{% extends 'base.html' %}
-
-{% block title %}قائمة العقود{% endblock %}
-
-{% block content %}
-  <h1>قائمة العقود</h1>
-<div class="text-right mb-3">
-  <a href="{% url 'contracts:contract_create' %}" class="btn btn-primary">إضافة عقد جديد</a>
-</div>
-  <table class="table table-bordered">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>إسم الوحدة</th>
-        <th>إسم المستأجر</th>
-        <th>تاريخ البداية</th>
-        <th>تاريخ النهاية</th>
-        <th>الإجراءات</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for contract in contracts %}
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>عقود الإيجار</title>
+  </head>
+  <body>
+    <h1>قائمة عقود الإيجار</h1>
+    <a href="{% url 'rentalcontract_create' %}">إضافة عقد جديد</a>
+    <table border="1">
+      <thead>
         <tr>
-          <td>{{ contract.id }}</td>
-          <td>{{ contract.unit.unit.name }}</td>
-          <td>{{ contract.user.username }}</td>
-          <td>{{ contract.start_date }}</td>
-          <td>{{ contract.end_date }}</td>
-          <td>
-            <a href="{% url 'contracts:contract_detail' contract.id %}" class="btn btn-info btn-sm">التفاصيل</a>
-            <a href="{% url 'contracts:contract_update' contract.id %}" class="btn btn-warning btn-sm">تعديل</a>
-            <a href="{% url 'contracts:contract_delete' contract.id %}" class="btn btn-danger btn-sm">حذف</a>
-          </td>
+          <th>الوحدة</th>
+          <th>المستأجر</th>
+          <th>تاريخ البداية</th>
+          <th>تاريخ النهاية</th>
+          <th>الإيجار الشهري</th>
+          <th>عدد الأيام المتبقية</th>
+          <th>خيارات</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6" class="text-center">لا توجد عقود</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-{% endblock %}
+      </thead>
+      <tbody>
+        {% for contract in contracts %}
+          <tr>
+            <td>{{ contract.unit.unit_number }}</td>
+            <td>{{ contract.tenant.user.username }}</td>
+            <td>{{ contract.start_date }}</td>
+            <td>{{ contract.end_date }}</td>
+            <td>{{ contract.monthy_rent }}</td>
+            <td>{{ contract.days_left }}</td>
+            <td>
+              <a href="{% url 'rentalcontract_update' contract.id %}">تعديل</a>
+              <a href="{% url 'rentalcontract_delete' contract.id %}">حذف</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7">لا توجد عقود إيجار</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

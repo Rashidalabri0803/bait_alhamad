@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from django.db.models import Count, Sum
-from .models import Unit, Invoice, Tenant, Property
+from .models import Unit, Invoice, Tenant, Property,RentalContract
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import PropertyForm, TenantForm
+from .forms import PropertyForm, TenantForm, RentalContractForm
 
 def dashboard(request):
   # ملخص شامل للعقارات
@@ -99,3 +99,29 @@ class TenantDeleteView(DeleteView):
     model = Tenant
     template_name = 'tenants/tenant_confirm_delete.html'
     success_url = reverse_lazy('tenant_list')
+
+# عرض قائمة العقود
+class RentalContractListView(ListView):
+    model = RentalContract
+    template_name = 'contracts/rentalcontract_list.html'
+    context_object_name = 'contracts'
+
+# إضافة عقد إيجار جديد
+class RentalContractCreateView(CreateView):
+    model = RentalContract
+    form_class = RentalContractForm
+    template_name = 'contracts/rentalcontract_form.html'
+    success_url = reverse_lazy('rentalcontract_list')
+
+# تعديل عقد إيجار
+class RentalContractUpdateView(UpdateView):
+    model = RentalContract
+    form_class = RentalContractForm
+    template_name = 'contracts/rentalcontract_form.html'
+    success_url = reverse_lazy('rentalcontract_list')
+
+# حذف عقد إيجار
+class RentalContractDeleteView(DeleteView):
+    model = RentalContract
+    template_name = 'contracts/rentalcontract_confirm_delete.html'
+    success_url = reverse_lazy('rentalcontract_list')
