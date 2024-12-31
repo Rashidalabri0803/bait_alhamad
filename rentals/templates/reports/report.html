@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>تقارير وتحليلات</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        direction: rtl;
+        text-align: right;
+      }
+      .container {
+        margin: 20px;
+      }
+      .card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .chart {
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>تقارير وتحليلات</h1>
+      <div class="card">
+        <h2>إجمالي الإيرادات</h2>
+        <p>{{ total_revenue }} ريال عماني</p>
+      </div>
+      <div class="card">
+        <h3>إجمالي المصروفات</h3>
+        <p>{{ maintenance_expenses }} ريال عماني</p>
+    </div>
+      <div class="card">
+        <h3>معدل الإشغال</h3>
+        <p>{{ occupancy_rate|floatform:2 }}%</p>
+      </div>
+      <div class="card">
+        <h3>الإيرادات الشهرية</h3>
+        <p>{{ revenue_chart|safe }}</p>
+      </div>
+  </body>
+</html>

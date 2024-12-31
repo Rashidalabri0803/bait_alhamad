@@ -4,6 +4,9 @@ from .models import Property, Invoice, Tenant, RentalContract, Payment, Maintena
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm
+import pandas as pd
+import plotly.express as px
+from plotly.offline import plot
 #from django.http import HttpResponse
 #from weasyprint import HTML
 
@@ -166,6 +169,43 @@ class MaintenanceRequestDeleteView(DeleteView):
     model = MaintenanceRequest
     template_name = 'maintenance_requests/maintenance_request_confirm_delete.html'
     success_url = reverse_lazy('maintenance_request_list')
+
+def generate_reports(request):
+    # 1. الايرادات
+    total_revenue = Payment.objects.aggregate(total=Sum('amount_paid'))['total'] or 0
+
+    # 2. المصروفات (افتراض ان المصروفات تاتي من طلبات الصيانة)
+    maintenance_expenses = Property.objects.annotate(total_expenses=Sum('maintenance_requests__expense_amount')).aggrgate(total=Sum('total_expenses'))['total'] or 0
+
+    # 3. معدلات الإشغال
+    total_unit = Property.objects.count()
+    occupied_units = Property.objects.filter(status='rented').count()
+    occupancy_rate = (occupied_units / total_unit) * 100 if total_unit > 0 else 0
+
+    # بيانات إضافية: تحليل الايرادات عبر الاشهر
+    invoices = Invoice.objects.values('invoice_date', 'amount')
+    df = pd.DataFrame(invoices)
+    if not df.empty:
+        df['invoice_date'] = pd.to_datetime(df['invoice_date'])
+        df['month'] = df['invoice_date'].dt.to_period('M')
+        revenue_by_month = df.groupby('month')['amount'].sum().reset_index()
+    else:
+        revenue_by_month = pd.DataFrame(columns=['month', 'amount'])
+    # إنشاء الرسم البياني باستخدام Plotly
+    if not revenue_by_month.empty:
+        fig = px.bar(revenue_by_month, x='month', y='amount', title="إيرادات الشهرية", labels={'month': 'الشهر', 'amount': 'الايرادات'},)
+        revenue_chart = plot(fig, output_type='div')
+    else:
+        revenue_chart = "<p>لا يوجد بيانات للايرادات الشهرية.</p>"
+
+    # تمرير البيانات إلى القالب
+        context = {
+            'total_revenue': total_revenue,
+            'maintenance_expenses': maintenance_expenses,
+            'occupancy_rate': occupancy_rate,
+            'revenue_chart': revenue_chart,
+        }
+        return render(request, 'reports/reports.html', context)
 
 # توليد فاتورة PDF
 #def generate_invoice_pdf(request, pk):
