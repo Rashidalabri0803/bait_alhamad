@@ -1,5 +1,5 @@
 from django import forms
-from .models import Property, Tenant, RentalContract, Payment
+from .models import Property, Tenant, RentalContract, Payment, MaintenanceRequest
 
 class PropertyForm(forms.ModelForm):
     class Meta:
@@ -53,4 +53,18 @@ class PaymentForm(forms.ModelForm):
             'invoice': 'الفاتورة',
             'amount_paid': 'المبلغ المدفوع',
             'payment_method': 'طريقة الدفع',
+        }
+
+class MaintenanceRequestForm(forms.ModelForm):
+    class Meta:
+        model = MaintenanceRequest
+        fields = ['unit', 'title', 'description', 'status']
+        labels = {
+            'unit': 'الوحدة',
+            'title': 'عنوان الطلب',
+            'description': 'وصف المشكلة',
+            'status': 'الحالة',
+        }
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
         }

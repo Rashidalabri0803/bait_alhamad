@@ -112,3 +112,23 @@ class Payment(models.Model):
 
   def __str__(self):
     return f"دفعة بقيمة {self.amount_paid} للفاتورة {self.invoice.id}"
+
+class MaintenanceRequest(models.Model):
+  STATUS_CHOICES = (
+    ('pending', _('قيد الانتظار')),
+    ('is_progres', _('قيد التنفيذ')),
+    ('completed', _('مكتمل')),
+  )
+  unit = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='maintenance_requests', verbose_name=_('الوحدة'))
+  title = models.CharField(max_length=100, verbose_name=_('عنوان الطلب'))
+  description = models.TextField(verbose_name=_('وصف المشكلة'))
+  status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name=_('الحالة'))
+  requested_at = models.DateTimeField(auto_now_add=True, verbose_name=_('تاريخ الطلب'))
+  updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ التحديث'))
+
+  class Meta:
+    verbose_name = _('طلب الصيانة')
+    verbose_name_plural = _('طلبات الصيانة')
+
+  def __str__(self):
+    return f"طلب صيانة {self.title} - {self.get_status_display()}"

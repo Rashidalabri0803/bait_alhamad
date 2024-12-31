@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>طلبات الصيانة</title>
+  </head>
+  <body>
+    <h1>قائمة طلبات الصيانة</h1>
+    <a href="{% url 'maintenance_request_create' %}">إضافة طلب جديد</a>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>الوحدة</th>
+          <th>عنوان الطلب</th>
+          <th>الحالة</th>
+          <th>تاريخ الطلب</th>
+          <th>خيارات</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for request in requests %}
+          <tr>
+            <td>{{ request.unit }}</td>
+            <td>{{ request.title }}</td>
+            <td>{{ request.get_status_display }}</td>
+            <td>{{ request.requested_at }}</td>
+            <td>
+              <a href="{% url 'maintenance_request_update' request.id %}">تعديل</a>
+              <a href="{% url 'maintenance_request_delete' request.id %}">حذف</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5">لا توجد طلبات صيانة</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </body>
+</html>

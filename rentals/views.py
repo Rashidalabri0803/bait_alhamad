@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Sum
-from .models import Property, Invoice, Tenant, Property,RentalContract, Payment
+from .models import Property, Invoice, Tenant, RentalContract, Payment, MaintenanceRequest
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm
+from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm
 #from django.http import HttpResponse
 #from weasyprint import HTML
 
@@ -140,6 +140,32 @@ class PaymentCreateView(CreateView):
     form_class = PaymentForm
     template_name = 'payments/payment_form.html'
     success_url = reverse_lazy('invoice_list')
+
+# عرض قائمة طلبات الصيانة
+class MaintenanceRequestListView(ListView):
+    model = MaintenanceRequest
+    template_name = 'maintenance_requests/maintenance_request_list.html'
+    context_object_name = 'requests'
+
+# إضافة طلب صيانة جديد
+class MaintenanceRequestCreateView(CreateView):
+    model = MaintenanceRequest
+    form_class = MaintenanceRequestForm
+    template_name = 'maintenance_requests/maintenance_request_form.html'
+    success_url = reverse_lazy('maintenance_request_list')
+
+# تعديل طلب صيانة
+class MaintenanceRequestUpdateView(UpdateView):
+    model = MaintenanceRequest
+    form_class = MaintenanceRequestForm
+    template_name = 'maintenance_requests/maintenance_request_form.html'
+    success_url = reverse_lazy('maintenance_request_list')
+
+# حذف طلب صيانة
+class MaintenanceRequestDeleteView(DeleteView):
+    model = MaintenanceRequest
+    template_name = 'maintenance_requests/maintenance_request_confirm_delete.html'
+    success_url = reverse_lazy('maintenance_request_list')
 
 # توليد فاتورة PDF
 #def generate_invoice_pdf(request, pk):

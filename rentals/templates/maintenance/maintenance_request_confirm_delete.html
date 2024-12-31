@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>حذف طلب صيانة</title>
+  </head>
+  <body>
+    <h1>حذف طلب صيانة</h1>
+    <p>هل أنت متأكد أنك تريد حذف الطلب الصيانة "{{ object.title }}"؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">نعم ، حذف</button>
+      <a href="{% url 'maintenance_request_list' %}">إلغاء</a>
+    </form>
+  </body>
+</html>
