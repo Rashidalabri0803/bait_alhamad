@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>حذف المستند</title>
+  </head>
+  <body>
+    <h1>حذف المستند</h1>
+    <p>هل أنت متأكد من حذف المستند "{{ document.title }}"؟</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit">نعم ، حذف</button>
+      <a href="{% url 'document_list' %}">الغاء</a>
+    </form>
+  </body>
+</html>

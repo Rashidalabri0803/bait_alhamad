@@ -1,9 +1,9 @@
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Count, Sum
-from .models import Property, Invoice, Tenant, RentalContract, Payment, MaintenanceRequest
+from .models import Property, Invoice, Tenant, RentalContract, Payment, MaintenanceRequest, Document
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm
+from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm, DocumentForm
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
@@ -207,12 +207,28 @@ def generate_reports(request):
         }
         return render(request, 'reports/reports.html', context)
 
-# توليد فاتورة PDF
-#def generate_invoice_pdf(request, pk):
-    #invoice = get_object_or_404(Invoice, pk=pk)
-    #context = {'invoice': invoice}
-    #html = render(request, 'invoices/invoice_pdf.html', context)
-    #pdf = HTML(string=html).write_pdf()
+# عرض قائمة المستندات
+class DocumentListView(ListView):
+    model = Document
+    template_name = 'documents/document_list.html'
+    context_object_name = 'documents'
 
-    #response = HttpResponse(pdf, content_type='application/pdf') if pdf else HttpResponse(status=404)
-    #response['Content-Disposition'] = f'inline; filename="invoice_{invoice.id}.pdf"'
+# إضافة مستند جديد
+class DocumentCreateView(CreateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = 'documents/document_form.html'
+    success_url = reverse_lazy('document_list')
+
+# تعديل مستند
+class DocumentUpdateView(UpdateView):
+    model = Document
+    form_class = DocumentForm
+    template_name = 'documents/document_form.html'
+    success_url = reverse_lazy('document_list')
+
+# حذف مستند
+class DocumentDeleteView(DeleteView):
+    model = Document
+    template_name = 'documents/document_confirm_delete.html'
+    success_url = reverse_lazy('document_list')

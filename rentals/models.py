@@ -132,3 +132,16 @@ class MaintenanceRequest(models.Model):
 
   def __str__(self):
     return f"طلب صيانة {self.title} - {self.get_status_display()}"
+
+class Document(models.Model):
+  title = models.CharField(max_length=255, verbose_name=_('عنوان المستند'))
+  description = models.TextField(blank=True, null=True, verbose_name=_('وصف'))
+  file = models.FileField(upload_to='documents/', verbose_name=_('ملف المستند'))
+  updated_at = models.DateTimeField(auto_now=True, verbose_name=_('تاريخ الرفع'))
+
+  class Meta:
+    verbose_name = _('مستند')
+    verbose_name_plural = _('المستندات')
+
+  def __str__(self):
+    return self.title

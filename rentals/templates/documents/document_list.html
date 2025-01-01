@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <<head>
+     <meta charset="utf-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+     <meta name="description" content="">
+     <meta name="author" content="">
+     <title>إدارة المستندات</title>
+  </head>
+    <body>
+      <h1>قائمة المستندات</h1>
+      <a href="{% url 'document_create' %}">إضافة مستند جديد</a>
+      <table border="1">
+        <thead>
+          <tr>
+            <th>عنوان</th>
+            <th>وصف</th>
+            <th>الملف</th>
+            <th>تاريخ الرفع</th>
+            <th>خيارات</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for document in documents %}
+          <tr>
+            <td>{{ document.title }}</td>
+            <td>{{ document.description }}</td>
+            <td><a href="{{ document.file.url }}" target="_blank">عرض الملف</a></td>
+            <td>{{ document.uploaded_at }}</td>
+            <td>
+              <a href="{% url 'document_update' document.id %}">تعديل</a>
+              <a href="{% url 'document_delete' document.id %}">حذف</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="5">لا توجد مستندات</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </body>
+</html>

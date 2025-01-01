@@ -1,5 +1,5 @@
 from django import forms
-from .models import Property, Tenant, RentalContract, Payment, MaintenanceRequest
+from .models import Property, Tenant, RentalContract, Payment, MaintenanceRequest, Document
 
 class PropertyForm(forms.ModelForm):
     class Meta:
@@ -67,4 +67,14 @@ class MaintenanceRequestForm(forms.ModelForm):
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
+        }
+
+class DocumentForm(forms.ModelForm):
+    class Meta:
+        model = Document
+        fields = ['title', 'description', 'file']
+        labels = {
+            'title': 'عنوان المستند',
+            'description': 'وصف',
+            'file': 'الملف',
         }

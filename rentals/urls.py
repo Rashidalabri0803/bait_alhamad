@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import dashboard,PropertyListView,PropertyCreateView,PropertyUpdateView,PropertyDeleteView,TenantListView,TenantCreateView,TenantUpdateView,TenantDeleteView,RentalContractListView,RentalContractCreateView,RentalContractUpdateView,RentalContractDeleteView,InvoiceListView,PaymentCreateView, MaintenanceRequestListView, MaintenanceRequestCreateView, MaintenanceRequestUpdateView, MaintenanceRequestDeleteView, generate_reports
+from .views import dashboard,PropertyListView,PropertyCreateView,PropertyUpdateView,PropertyDeleteView,TenantListView,TenantCreateView,TenantUpdateView,TenantDeleteView,RentalContractListView,RentalContractCreateView,RentalContractUpdateView,RentalContractDeleteView,InvoiceListView,PaymentCreateView, MaintenanceRequestListView, MaintenanceRequestCreateView, MaintenanceRequestUpdateView, MaintenanceRequestDeleteView, generate_reports, DocumentListView, DocumentCreateView, DocumentUpdateView, DocumentDeleteView
 
 urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
@@ -22,5 +22,9 @@ urlpatterns = [
     path('maintenance-requests/<int:pk>/update/', MaintenanceRequestUpdateView.as_view(), name='maintenance_request_update'),
     path('maintenance-requests/<int:pk>/delete/', MaintenanceRequestDeleteView.as_view(), name='maintenance_request_delete'),
     path('reports/', generate_reports, name='generate_reports'),
+    path('documents/', DocumentListView.as_view(), name='document_list'),
+    path('documents/create/', DocumentCreateView.as_view(), name='document_create'),
+    path('documents/<int:pk>/update/', DocumentUpdateView.as_view(), name='document_update'),
+    path('documents/<int:pk>/delete/', DocumentDeleteView.as_view(), name='document_delete'),
     #path('invoices/pdf/<int:pk>/', generate_invoice_pdf, name='generate_invoice_pdf'),
 ]

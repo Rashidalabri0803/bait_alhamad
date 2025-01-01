@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>{{ view.object|default:"إضافة مستند جديد" }}</title>
+  </head>
+  <body>
+    <h1>{{ view.object|default:"إضافة مستند جديد" }}</h1>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit">حفظ</button>
+    </form>
+    <a href="{% url 'document_list' %}">عودة إلى القائمة</a>
+  </body>
+</html>
