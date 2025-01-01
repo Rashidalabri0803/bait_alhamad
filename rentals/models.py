@@ -3,6 +3,22 @@ from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User
 from django.utils.timezone import now
 from datetime import date
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+  USER_TYPE_CHOICES = (
+    ('owner', _('مالك')),
+    ('tenant', _('مستأجر')),
+  )
+  user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, verbose_name=_('نوع المستخدم'))
+  phone_number = models.CharField(max_length=15, blank=True, null=True, verbose_name=_('رقم الهاتف')),
+
+  class Meta:
+    verbose_name = _('مستخدم')
+    verbose_name_plural = _('المستخدمون')
+
+  def __str__(self):
+    return self.username
 
 class Property(models.Model):
   PROPERTY_TYPE_CHOICES = (

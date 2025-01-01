@@ -1,5 +1,25 @@
 from django import forms
-from .models import Property, Tenant, RentalContract, Payment, MaintenanceRequest, Document
+from .models import Property, Tenant, RentalContract, Payment, MaintenanceRequest, Document, CustomUser
+from django.contrib.auth.forms import PasswordChangeForm
+
+class ProfileUpdateForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'phone_number']
+        labels = {
+            'first_name': 'الاسم الأول',
+            'last_name': 'الاسم الأخير',
+            'email': 'البريد الإلكتروني',
+            'phone_number': 'رقم الهاتف',
+        }
+
+class CustomPasswordChangeForm(PasswordChangeForm):
+    class Meta:
+        labels = {
+            'old_password': 'كلمة المرور القديمة',
+            'new_password1': 'كلمة المرور الجديدة',
+            'new_password2': 'تأكيد كلمة المرور الجديدة'
+        }
 
 class PropertyForm(forms.ModelForm):
     class Meta:

@@ -1,14 +1,43 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirct
 from django.db.models import Count, Sum
 from .models import Property, Invoice, Tenant, RentalContract, Payment, MaintenanceRequest, Document
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm, DocumentForm
+from .forms import PropertyForm, TenantForm, RentalContractForm, PaymentForm, MaintenanceRequestForm, DocumentForm, ProfileUpdateForm, CustomPasswordChangeForm
 import pandas as pd
 import plotly.express as px
 from plotly.offline import plot
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import update_session_auth_hash
 #from django.http import HttpResponse
 #from weasyprint import HTML
+
+# عرض وتحديث الملف الشخصي
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        profile_form = ProfileUpdateForm(request.POST, instance=request.user)
+        if profile_form.is_valid():
+            profile_form.save()
+            return redirct('profile')
+    else:
+        profile_form = ProfileUpdateForm(instance=request.user)
+    context = {'profile_form': profile_form}
+    return render(request, 'users/profile.html', context)
+
+# تغيير كلمة المرور
+@login_required
+def change_password_view(request):
+    if request.method == 'POST':
+        form = CustomPasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            update_session_auth_hash(request, form.user)
+            return redirct('profile')
+    else:
+        form = CustomPasswordChangeForm(user=request.user)
+    context = {'form': form}
+    return render(request, 'users/change_password.html', context)
 
 def dashboard(request):
   # ملخص شامل للعقارات

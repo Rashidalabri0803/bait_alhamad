@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ar">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>الملف الشخصي</title>
+  </head>
+  <body>
+    <h1>الملف الشخصي</h1>
+    <form method="post">
+      {% csrf_token %}
+      {{ profile_form.as_p }}
+      <button type="submit">تحديث</button>
+    </form>
+    <a href="{% url 'change_password' %}">تغيير كلمة المرور</a>
+  </body>
+</html>
